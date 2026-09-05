@@ -11,3 +11,6 @@ appstreamcli = find_program('appstreamcli', required: false)
 if appstreamcli.found()
   test('metainfo', appstreamcli, args: ['validate', '--no-net', metainfo_file], suite: 'data')
 endif
+
+timer_test = executable('timer-test', 'timer-test.vala', core_sources, dependencies: core_deps)
+test('timer', timer_test, suite: 'unit', protocol: 'tap', args: ['--tap'])
