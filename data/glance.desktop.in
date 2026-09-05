@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Glance
+Comment=A timer that stays visible without getting in your way
+Exec=glance
+Icon=@APP_ID@
+Terminal=false
+Categories=Utility;Clock;
+Keywords=timer;countdown;alarm;deadline;until;
+StartupNotify=true
+SingleMainWindow=true

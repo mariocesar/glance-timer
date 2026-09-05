@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="@APP_ID@" path="@RESOURCE_PATH@/">
+    <key name="alarm" type="s">
+      <choices>
+        <choice value="soft-chime"/>
+        <choice value="bell"/>
+        <choice value="digital"/>
+        <choice value="pulse"/>
+        <choice value="classic"/>
+        <choice value="none"/>
+      </choices>
+      <default>'soft-chime'</default>
+      <summary>Alarm sound played when a timer finishes</summary>
+    </key>
+    <key name="alarm-volume" type="d">
+      <range min="0.0" max="1.0"/>
+      <default>0.8</default>
+      <summary>Alarm volume</summary>
+    </key>
+    <key name="show-seconds" type="b">
+      <default>true</default>
+      <summary>Show the seconds selector</summary>
+    </key>
+    <key name="notify" type="b">
+      <default>true</default>
+      <summary>Send a desktop notification when a timer finishes</summary>
+    </key>
+    <key name="presentation-mode" type="s">
+      <choices>
+        <choice value="window"/>
+        <choice value="pinned"/>
+        <choice value="peek"/>
+      </choices>
+      <default>'window'</default>
+      <summary>Presentation mode used when a timer starts</summary>
+    </key>
+    <key name="peek-corner" type="s">
+      <choices>
+        <choice value="top-left"/>
+        <choice value="top-right"/>
+        <choice value="bottom-left"/>
+        <choice value="bottom-right"/>
+      </choices>
+      <default>'top-right'</default>
+      <summary>Screen corner used by Peek mode</summary>
+    </key>
+    <key name="opacity" type="d">
+      <range min="0.5" max="1.0"/>
+      <default>1.0</default>
+      <summary>Window opacity in Pinned and Peek modes</summary>
+    </key>
+  </schema>
+</schemalist>

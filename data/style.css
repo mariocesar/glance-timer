@@ -1,0 +1,22 @@
+@define-color glance_bg #15171b;
+@define-color glance_fg #e9e6e1;
+@define-color glance_dim #80838b;
+@define-color glance_accent #f2a93b;
+
+window.glance {
+  background-color: @glance_bg;
+  color: @glance_fg;
+}
+
+window.glance .brand {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: @glance_dim;
+}
+
+window.glance .countdown {
+  font-size: 64px;
+  font-weight: 300;
+  font-feature-settings: "tnum";
+}
