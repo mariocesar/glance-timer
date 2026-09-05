@@ -1,7 +1,7 @@
 config_vala = configure_file(input: 'config.vala.in', output: 'config.vala', configuration: conf)
 
 # GTK-free core, shared with the unit tests.
-core_sources = files('duration.vala', 'timer.vala')
+core_sources = files('deadline.vala', 'duration.vala', 'timer.vala')
 core_deps = [
   dependency('glib-2.0', version: '>= 2.80'),
   dependency('gobject-2.0', version: '>= 2.80'),

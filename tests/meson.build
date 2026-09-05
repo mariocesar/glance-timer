@@ -14,3 +14,8 @@ endif
 
 timer_test = executable('timer-test', 'timer-test.vala', core_sources, dependencies: core_deps)
 test('timer', timer_test, suite: 'unit', protocol: 'tap', args: ['--tap'])
+
+foreach name : ['parser', 'deadline']
+  exe = executable(name + '-test', name + '-test.vala', core_sources, dependencies: core_deps)
+  test(name, exe, suite: 'unit', protocol: 'tap', args: ['--tap'])
+endforeach
