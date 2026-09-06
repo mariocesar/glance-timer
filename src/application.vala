@@ -4,6 +4,11 @@ namespace Glance {
     extern void add_provider_for_display (Gdk.Display display, Gtk.StyleProvider provider, uint priority);
 
     public class Application : Gtk.Application {
+        // The one timer; windows only display it.
+        public Timer timer { get; default = new Timer (); }
+        // Label of the current timer, empty when none was given.
+        public string label { get; set; default = ""; }
+
         public Application () {
             Object (application_id: Config.APP_ID, flags: ApplicationFlags.HANDLES_COMMAND_LINE, version: Config.VERSION);
         }
@@ -24,10 +29,6 @@ namespace Glance {
         public override int command_line (ApplicationCommandLine command_line) {
             activate ();
             return 0;
-        }
-
-        public static int main (string[] args) {
-            return new Application ().run (args);
         }
     }
 }

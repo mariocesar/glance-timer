@@ -9,17 +9,11 @@ core_deps = [
 ]
 
 picker_sources = files('duration-picker.vala')
+# Everything but main(), shared with the widget tests.
+app_sources = [files('application.vala', 'timer-window.vala'), picker_sources, core_sources, config_vala, resources]
+app_deps = core_deps + [
+  dependency('gio-2.0', version: '>= 2.80'),
+  dependency('gtk4', version: '>= 4.20'),
+]
 
-glance = executable('glance',
-  'application.vala',
-  picker_sources,
-  'timer-window.vala',
-  core_sources,
-  config_vala,
-  resources,
-  dependencies: core_deps + [
-    dependency('gio-2.0', version: '>= 2.80'),
-    dependency('gtk4', version: '>= 4.20'),
-  ],
-  install: true,
-)
+glance = executable('glance', 'main.vala', app_sources, dependencies: app_deps, install: true)

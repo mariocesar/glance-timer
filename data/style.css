@@ -1,11 +1,23 @@
 @define-color glance_bg #15171b;
+@define-color glance_surface #1d2025;
 @define-color glance_fg #e9e6e1;
 @define-color glance_dim #80838b;
 @define-color glance_accent #f2a93b;
+@define-color glance_on_accent #1a1407;
+@define-color glance_error #ef7564;
 
 window.glance {
   background-color: @glance_bg;
   color: @glance_fg;
+}
+
+window.glance.csd {
+  border-radius: 14px;
+  box-shadow: 0 6px 18px alpha(black, 0.45), 0 0 0 1px alpha(white, 0.07);
+}
+
+window.glance .setup {
+  padding: 10px 18px 14px 20px;
 }
 
 window.glance .brand {
@@ -15,10 +27,32 @@ window.glance .brand {
   color: @glance_dim;
 }
 
-window.glance .countdown {
-  font-size: 64px;
-  font-weight: 300;
-  font-feature-settings: "tnum";
+/* Duration | Until */
+window.glance .mode-switch {
+  background-color: @glance_surface;
+  border-radius: 999px;
+  padding: 2px;
+}
+
+window.glance .mode-switch button {
+  min-height: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: none;
+  box-shadow: none;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: @glance_dim;
+}
+
+window.glance .mode-switch button:hover {
+  color: @glance_fg;
+}
+
+window.glance .mode-switch button:checked {
+  background-color: alpha(@glance_fg, 0.1);
+  color: @glance_fg;
 }
 
 window.glance .duration-picker .caption {
@@ -35,7 +69,7 @@ window.glance .duration-picker .separator {
 }
 
 window.glance wheel {
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 500;
   font-feature-settings: "tnum";
   border-radius: 10px;
@@ -49,4 +83,71 @@ window.glance wheel:hover {
 window.glance wheel:focus-visible {
   outline: 2px solid alpha(@glance_accent, 0.85);
   outline-offset: -2px;
+}
+
+window.glance .message {
+  font-size: 11px;
+  color: @glance_dim;
+}
+
+window.glance .message.error {
+  color: @glance_error;
+}
+
+/* Primary action: a solid accent disc. */
+window.glance button.start {
+  min-width: 64px;
+  min-height: 64px;
+  padding: 0;
+  border-radius: 999px;
+  border: none;
+  box-shadow: none;
+  background-color: @glance_accent;
+  color: @glance_on_accent;
+  transition: background-color 120ms ease-out, transform 80ms ease-out;
+}
+
+window.glance button.start:hover {
+  background-color: shade(@glance_accent, 1.08);
+}
+
+window.glance button.start:active {
+  background-color: shade(@glance_accent, 0.9);
+  transform: scale(0.95);
+}
+
+window.glance button.start:focus-visible {
+  outline: 2px solid alpha(@glance_fg, 0.9);
+  outline-offset: 3px;
+}
+
+window.glance .footer entry,
+window.glance .footer dropdown > button {
+  min-height: 28px;
+  border-radius: 8px;
+  font-weight: normal;
+  background-color: @glance_surface;
+  box-shadow: none;
+  border: none;
+  font-size: 12px;
+}
+
+window.glance .footer entry:focus-within {
+  outline: 2px solid alpha(@glance_accent, 0.7);
+  outline-offset: -2px;
+}
+
+window.glance .countdown {
+  font-size: 64px;
+  font-weight: 300;
+  font-feature-settings: "tnum";
+}
+
+window.glance .running {
+  padding: 16px 24px;
+}
+
+window.glance .running-label {
+  font-size: 13px;
+  color: @glance_dim;
 }

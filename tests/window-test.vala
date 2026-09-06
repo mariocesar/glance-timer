@@ -1,0 +1,178 @@
+// Keyboard routing in the setup and running views, driven through the window's key controller.
+using Glance;
+
+Glance.Application app;
+TimerWindow win;
+Gtk.EventController keys;
+
+bool press (uint keyval, Gdk.ModifierType state = 0) {
+    bool handled = false;
+    Signal.emit_by_name (keys, "key-pressed", keyval, 0u, state, out handled);
+    return handled;
+}
+
+void type (string text) {
+    for (int i = 0; i < text.length; i++) {
+        var c = text[i];
+        press (c == '.' ? Gdk.Key.period : Gdk.Key.@0 + (c - '0'));
+    }
+}
+
+Gtk.Widget? find (Gtk.Widget root, Type type, string? label = null) {
+    for (var child = root.get_first_child (); child != null; child = child.get_next_sibling ()) {
+        if (child.get_type ().is_a (type) && (label == null || (child is Gtk.Button && ((Gtk.Button) child).label == label))) return child;
+        var found = find (child, type, label);
+        if (found != null) return found;
+    }
+    return null;
+}
+
+void reset () {
+    app.timer.stop ();
+    ((Gtk.ToggleButton) find (win, typeof (Gtk.ToggleButton), "Duration")).active = true;
+    press (Gdk.Key.Escape);
+    win.set_focus (null);
+}
+
+void add_window_tests () {
+    Test.add_func ("/keys/default-starts-25-minutes", () => {
+        app.timer.stop ();
+        assert_true (press (Gdk.Key.Return));
+        assert_true (app.timer.state == TimerState.RUNNING);
+        assert_true (app.timer.total == 25 * Duration.MINUTE);
+        assert_true (press (Gdk.Key.Escape));
+        assert_true (app.timer.state == TimerState.IDLE);
+    });
+
+    Test.add_func ("/keys/digits", () => {
+        reset ();
+        type ("12345");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == Duration.HOUR + 23 * Duration.MINUTE + 45 * Duration.SECOND);
+        assert_true (press (Gdk.Key.KP_Enter));
+        assert_true (app.timer.state == TimerState.IDLE);
+    });
+
+    Test.add_func ("/keys/dot-and-keypad", () => {
+        reset ();
+        type ("50.");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == 50 * Duration.MINUTE);
+        reset ();
+        press (Gdk.Key.KP_4);
+        press (Gdk.Key.KP_5);
+        press (Gdk.Key.KP_Decimal);
+        press (Gdk.Key.KP_Enter);
+        assert_true (app.timer.total == 45 * Duration.MINUTE);
+        reset ();
+        press (Gdk.Key.@1);
+        press (Gdk.Key.comma);
+        press (Gdk.Key.comma);
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == Duration.HOUR);
+    });
+
+    Test.add_func ("/keys/overflow-and-backspace", () => {
+        reset ();
+        type ("75");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == 75 * Duration.SECOND);
+        reset ();
+        type ("1");
+        assert_true (press (Gdk.Key.BackSpace));
+        type ("2");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == 2 * Duration.SECOND);
+    });
+
+    Test.add_func ("/keys/rejects-zero-and-too-long", () => {
+        reset ();
+        press (Gdk.Key.Return);
+        assert_true (app.timer.state == TimerState.IDLE);
+        type ("995959");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.state == TimerState.IDLE);
+    });
+
+    Test.add_func ("/keys/wheel-change-restarts-typing", () => {
+        reset ();
+        var picker = (DurationPicker) find (win, typeof (DurationPicker));
+        type ("12");
+        picker.minutes.user_step (1);
+        type ("3");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.total == 3 * Duration.SECOND);
+    });
+
+    Test.add_func ("/keys/label-entry-keeps-its-keys", () => {
+        reset ();
+        type ("5");
+        var entry = (Gtk.Entry) find (win, typeof (Gtk.Entry));
+        entry.text = "Deep work";
+        win.set_focus (entry);
+        assert_true (win.get_focus () is Gtk.Editable);
+        assert_false (press (Gdk.Key.@5));
+        assert_false (press (Gdk.Key.BackSpace));
+        assert_true (press (Gdk.Key.Return));
+        assert_true (app.timer.state == TimerState.RUNNING);
+        assert_cmpstr (app.label, CompareOperator.EQ, "Deep work");
+        assert_true (app.timer.total == 5 * Duration.SECOND);
+        entry.text = "";
+    });
+
+    Test.add_func ("/keys/until-mode", () => {
+        reset ();
+        ((Gtk.ToggleButton) find (win, typeof (Gtk.ToggleButton), "Until")).active = true;
+        // A fifth digit would not fit HHMM and is dropped.
+        type ("14305");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.is_until);
+        var expected = Deadline.resolve ("14:30", new DateTime.now_local ()).to_unix () * Duration.SECOND - get_real_time ();
+        var diff = app.timer.remaining - expected;
+        assert_true (diff > -2 * Duration.SECOND && diff < 2 * Duration.SECOND);
+        reset ();
+        ((Gtk.ToggleButton) find (win, typeof (Gtk.ToggleButton), "Until")).active = true;
+        type ("75");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.state == TimerState.IDLE);
+    });
+
+    Test.add_func ("/keys/running-and-modifiers", () => {
+        reset ();
+        type ("5");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.state == TimerState.RUNNING);
+        assert_false (press (Gdk.Key.@5));
+        assert_true (app.timer.state == TimerState.RUNNING);
+        app.timer.stop ();
+        assert_false (press (Gdk.Key.@5, Gdk.ModifierType.CONTROL_MASK));
+        assert_false (press (Gdk.Key.Return, Gdk.ModifierType.ALT_MASK));
+        assert_true (app.timer.state == TimerState.IDLE);
+    });
+}
+
+int main (string[] args) {
+    if (!Gtk.init_check ()) {
+        print ("1..0 # SKIP no display\n");
+        return 0;
+    }
+    Test.init (ref args);
+    app = new Glance.Application ();
+    app.flags |= ApplicationFlags.NON_UNIQUE;
+    try {
+        app.register ();
+    } catch (Error e) {
+        error ("register: %s", e.message);
+    }
+    win = new TimerWindow (app);
+    var controllers = ((Gtk.Widget) win).observe_controllers ();
+    for (uint i = 0; i < controllers.get_n_items (); i++) {
+        var c = (Gtk.EventController) controllers.get_item (i);
+        if (c.name == "glance-keys") keys = c;
+    }
+    assert_nonnull (keys);
+    add_window_tests ();
+    var result = Test.run ();
+    win.destroy ();
+    return result;
+}

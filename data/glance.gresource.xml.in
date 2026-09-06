@@ -2,5 +2,6 @@
 <gresources>
   <gresource prefix="@RESOURCE_PATH@">
     <file>style.css</file>
+    <file alias="icons/scalable/actions/glance-start-symbolic.svg">icons/actions/glance-start-symbolic.svg</file>
   </gresource>
 </gresources>
