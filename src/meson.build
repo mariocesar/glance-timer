@@ -8,8 +8,11 @@ core_deps = [
   meson.get_compiler('vala').find_library('posix'),
 ]
 
+picker_sources = files('duration-picker.vala')
+
 glance = executable('glance',
   'application.vala',
+  picker_sources,
   'timer-window.vala',
   core_sources,
   config_vala,

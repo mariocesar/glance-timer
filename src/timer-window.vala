@@ -9,13 +9,14 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         titlebar = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0) { visible = false };
 
         var brand = new Gtk.Label ("GLANCE") { xalign = 0, css_classes = { "brand" } };
-        var countdown = new Gtk.Label ("00:00") { css_classes = { "countdown" } };
+        var picker = new DurationPicker () { halign = Gtk.Align.CENTER };
+        picker.set_fields (0, 25, 0);
 
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) {
             margin_top = 14, margin_bottom = 18, margin_start = 18, margin_end = 18,
         };
         box.append (brand);
-        box.append (countdown);
+        box.append (picker);
         child = new Gtk.WindowHandle () { child = box };
     }
 }

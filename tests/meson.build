@@ -19,3 +19,8 @@ foreach name : ['parser', 'deadline']
   exe = executable(name + '-test', name + '-test.vala', core_sources, dependencies: core_deps)
   test(name, exe, suite: 'unit', protocol: 'tap', args: ['--tap'])
 endforeach
+
+# Needs a display; skips itself without one.
+picker_test = executable('picker-test', 'picker-test.vala', picker_sources, core_sources,
+  dependencies: core_deps + [dependency('gtk4')])
+test('picker', picker_test, suite: 'widget', protocol: 'tap', args: ['--tap'])

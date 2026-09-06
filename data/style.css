@@ -20,3 +20,33 @@ window.glance .countdown {
   font-weight: 300;
   font-feature-settings: "tnum";
 }
+
+window.glance .duration-picker .caption {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: @glance_dim;
+}
+
+window.glance .duration-picker .separator {
+  font-size: 30px;
+  font-weight: 300;
+  color: @glance_dim;
+}
+
+window.glance wheel {
+  font-size: 34px;
+  font-weight: 500;
+  font-feature-settings: "tnum";
+  border-radius: 10px;
+  transition: background-color 150ms ease-out;
+}
+
+window.glance wheel:hover {
+  background-color: alpha(@glance_fg, 0.05);
+}
+
+window.glance wheel:focus-visible {
+  outline: 2px solid alpha(@glance_accent, 0.85);
+  outline-offset: -2px;
+}
