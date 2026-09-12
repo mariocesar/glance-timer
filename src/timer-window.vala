@@ -1,5 +1,5 @@
 public class Glance.TimerWindow : Gtk.ApplicationWindow {
-    const string[] ALARMS = { "Soft chime", "Bell", "Digital", "Pulse", "Classic", "None", null };
+    const string[] ALARMS = { "Soft chime", "Bell", "Digital", "Pulse", "Classic", "Silent", null };
 
     unowned Application app;
     DigitEntry entry = new DigitEntry ();
@@ -14,6 +14,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     Gtk.Entry label_entry;
     Gtk.Label countdown;
     Gtk.Label running_label;
+    Gtk.Label finished_label;
     uint hint_source;
 
     public TimerWindow (Application app) {
@@ -22,8 +23,15 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
 
         pages.add_named (build_setup (), "setup");
         pages.add_named (build_running (), "running");
+        pages.add_named (build_finished (), "finished");
         app.timer.notify["state"].connect (sync_page);
         app.timer.tick.connect (refresh_running);
+        app.timer.finished.connect (() => {
+            announce ("Time's up", Gtk.AccessibleAnnouncementPriority.HIGH);
+            // Only surface a hidden window: presenting a visible one steals keyboard focus on niri,
+            // and the next keystroke typed elsewhere would dismiss the alert unseen.
+            if (!get_visible ()) present ();
+        });
         sync_page ();
     }
 
@@ -40,7 +48,6 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     }
 
     Gtk.Widget build_setup () {
-        var brand = new Gtk.Label ("GLANCE") { xalign = 0, css_classes = { "brand" } };
         var duration_toggle = new Gtk.ToggleButton.with_label ("Duration") { active = true };
         until_toggle = new Gtk.ToggleButton.with_label ("Until") { group = duration_toggle };
         until_toggle.toggled.connect (on_mode_toggled);
@@ -49,10 +56,18 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         modes.append (until_toggle);
         // Until hint or validation error, next to the mode switch.
         message = new Gtk.Label ("") { xalign = 1, hexpand = true, css_classes = { "message" }, ellipsize = Pango.EllipsizeMode.END };
-        var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 10);
-        header.append (brand);
-        header.append (message);
+        var about = new Gtk.Button () {
+            css_classes = { "about" },
+            valign = Gtk.Align.CENTER,
+            tooltip_text = "About",
+            child = new Gtk.Image.from_icon_name ("glance-about-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
+        };
+        about.update_property (Gtk.AccessibleProperty.LABEL, "About Glance", -1);
+        about.clicked.connect (show_about);
+        var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
         header.append (modes);
+        header.append (message);
+        header.append (about);
 
         picker = new DurationPicker ();
         picker.set_fields (0, 25, 0);
@@ -76,22 +91,42 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         start_button.clicked.connect (start);
 
         setup_modes.hexpand = true;
-        var middle = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 28);
+        var middle = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 32);
         middle.append (setup_modes);
         middle.append (start_button);
 
-        label_entry = new Gtk.Entry () { placeholder_text = "Label (optional)", max_length = 40, hexpand = true };
+        label_entry = new Gtk.Entry () { placeholder_text = "Add label", max_length = 40, hexpand = true };
         label_entry.update_property (Gtk.AccessibleProperty.LABEL, "Timer label", -1);
         var alarm = new Gtk.DropDown.from_strings (ALARMS) { tooltip_text = "Alarm sound" };
+        // The button shows a bell before the sound name; the popup list shows names only.
+        var with_bell = new Gtk.SignalListItemFactory ();
+        with_bell.setup.connect ((object) => {
+            var row = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
+            row.append (new Gtk.Image.from_icon_name ("glance-alarm-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION });
+            row.append (new Gtk.Label (""));
+            ((Gtk.ListItem) object).child = row;
+        });
+        with_bell.bind.connect ((object) => {
+            var item = (Gtk.ListItem) object;
+            ((Gtk.Label) item.child.get_last_child ()).label = ((Gtk.StringObject) item.item).get_string ();
+        });
+        var plain = new Gtk.SignalListItemFactory ();
+        plain.setup.connect ((object) => ((Gtk.ListItem) object).child = new Gtk.Label ("") { xalign = 0 });
+        plain.bind.connect ((object) => {
+            var item = (Gtk.ListItem) object;
+            ((Gtk.Label) item.child).label = ((Gtk.StringObject) item.item).get_string ();
+        });
+        alarm.factory = with_bell;
+        alarm.list_factory = plain;
         var alarm_caption = new Gtk.Label ("Alarm sound") { visible = false };
         // GtkDropDown names itself after the selection; a labelled-by relation takes precedence.
         alarm.update_relation (Gtk.AccessibleRelation.LABELLED_BY, alarm_caption, null, -1);
-        var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8) { css_classes = { "footer" } };
+        var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) { css_classes = { "footer" } };
         footer.append (label_entry);
         footer.append (alarm_caption);
         footer.append (alarm);
 
-        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 4) { css_classes = { "setup" } };
+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 16) { css_classes = { "setup" } };
         box.append (header);
         box.append (middle);
         box.append (footer);
@@ -99,15 +134,13 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     }
 
     Gtk.Widget build_until () {
-        var grid = new Gtk.Grid () { css_classes = { "duration-picker" }, halign = Gtk.Align.CENTER, valign = Gtk.Align.CENTER, column_spacing = 6 };
+        var grid = new Gtk.Grid () { css_classes = { "duration-picker" }, halign = Gtk.Align.CENTER, valign = Gtk.Align.CENTER, column_spacing = 8 };
         grid.update_property (Gtk.AccessibleProperty.LABEL, "Until time", -1);
         until_hours = new WheelColumn ("Hour", 23);
         until_minutes = new WheelColumn ("Minute", 59);
-        grid.attach (new Gtk.Label ("HOUR") { css_classes = { "caption" } }, 0, 0);
-        grid.attach (until_hours, 0, 1);
-        grid.attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 1);
-        grid.attach (new Gtk.Label ("MINUTE") { css_classes = { "caption" } }, 2, 0);
-        grid.attach (until_minutes, 2, 1);
+        grid.attach (until_hours, 0, 0);
+        grid.attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 0);
+        grid.attach (until_minutes, 2, 0);
         until_hours.changed.connect (on_until_changed);
         until_minutes.changed.connect (on_until_changed);
         return grid;
@@ -120,6 +153,32 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         box.append (countdown);
         box.append (running_label);
         return box;
+    }
+
+    Gtk.Widget build_finished () {
+        var title = new Gtk.Label ("Time's up") { css_classes = { "finished-title" } };
+        finished_label = new Gtk.Label ("") { css_classes = { "finished-label" }, ellipsize = Pango.EllipsizeMode.END };
+        var dismiss = new Gtk.Button.with_label ("Dismiss") { css_classes = { "dismiss" }, halign = Gtk.Align.CENTER, tooltip_text = "Dismiss (Enter)" };
+        dismiss.clicked.connect (() => app.timer.stop ());
+        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { valign = Gtk.Align.CENTER, css_classes = { "finished" } };
+        box.append (title);
+        box.append (finished_label);
+        box.append (dismiss);
+        return box;
+    }
+
+    void show_about () {
+        new Gtk.AboutDialog () {
+            application = app,
+            transient_for = this,
+            modal = true,
+            program_name = "Glance",
+            version = Config.VERSION,
+            comments = "A timer that stays visible without getting in your way.",
+            website = "https://github.com/mariocesar/glance",
+            license_type = Gtk.License.MIT_X11,
+            logo_icon_name = Config.APP_ID,
+        }.present ();
     }
 
     bool on_key (uint keyval, uint keycode, Gdk.ModifierType state) {
@@ -266,9 +325,18 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     }
 
     void sync_page () {
-        var idle = app.timer.state == TimerState.IDLE;
-        pages.visible_child_name = idle ? "setup" : "running";
-        if (!idle) refresh_running ();
+        var state = app.timer.state;
+        var finished = state == TimerState.FINISHED;
+        pages.visible_child_name = state == TimerState.IDLE ? "setup" : finished ? "finished" : "running";
+        // The whole surface changes color so completion is hard to miss.
+        if (finished) {
+            add_css_class ("finished");
+            finished_label.label = app.label;
+            finished_label.visible = app.label != "";
+        } else {
+            remove_css_class ("finished");
+        }
+        if (state == TimerState.RUNNING || state == TimerState.PAUSED) refresh_running ();
     }
 
     void refresh_running () {

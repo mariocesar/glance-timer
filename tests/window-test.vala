@@ -4,6 +4,7 @@ using Glance;
 Glance.Application app;
 TimerWindow win;
 Gtk.EventController keys;
+int64 fake_now;
 
 bool press (uint keyval, Gdk.ModifierType state = 0) {
     bool handled = false;
@@ -137,6 +138,24 @@ void add_window_tests () {
         assert_true (app.timer.state == TimerState.IDLE);
     });
 
+    Test.add_func ("/finished/view-and-dismiss", () => {
+        reset ();
+        fake_now = 1000 * Duration.SECOND;
+        app.timer.now = () => fake_now;
+        type ("1");
+        press (Gdk.Key.Return);
+        assert_true (app.timer.state == TimerState.RUNNING);
+        assert_false (win.has_css_class ("finished"));
+        fake_now += Duration.SECOND;
+        app.timer.check ();
+        assert_true (app.timer.state == TimerState.FINISHED);
+        assert_true (win.has_css_class ("finished"));
+        assert_true (press (Gdk.Key.Return));
+        assert_true (app.timer.state == TimerState.IDLE);
+        assert_false (win.has_css_class ("finished"));
+        app.timer.now = boottime;
+    });
+
     Test.add_func ("/keys/running-and-modifiers", () => {
         reset ();
         type ("5");
@@ -164,6 +183,8 @@ int main (string[] args) {
     } catch (Error e) {
         error ("register: %s", e.message);
     }
+    // Connected before the window's handler: keeps the hidden test window from presenting itself on finish.
+    app.timer.finished.connect (() => Signal.stop_emission_by_name (app.timer, "finished"));
     win = new TimerWindow (app);
     var controllers = ((Gtk.Widget) win).observe_controllers ();
     for (uint i = 0; i < controllers.get_n_items (); i++) {

@@ -234,7 +234,7 @@ public class Glance.WheelColumn : Gtk.Widget, Gtk.AccessibleRange {
     }
 }
 
-// Hours, minutes and seconds wheels under captions, separated by colons.
+// Hours, minutes and seconds wheels separated by colons.
 public class Glance.DurationPicker : Gtk.Grid {
     public WheelColumn hours { get; private set; }
     public WheelColumn minutes { get; private set; }
@@ -253,12 +253,12 @@ public class Glance.DurationPicker : Gtk.Grid {
 
     construct {
         add_css_class ("duration-picker");
-        column_spacing = 6;
+        column_spacing = 8;
         update_property (Gtk.AccessibleProperty.LABEL, "Duration", -1);
         hours = add_wheel ("Hours", 23, 0);
-        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 1);
+        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 0);
         minutes = add_wheel ("Minutes", 59, 2);
-        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 3, 1);
+        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 3, 0);
         seconds = add_wheel ("Seconds", 59, 4);
     }
 
@@ -269,11 +269,9 @@ public class Glance.DurationPicker : Gtk.Grid {
     }
 
     WheelColumn add_wheel (string caption, int max, int column) {
-        var label = new Gtk.Label (caption.up ()) { css_classes = { "caption" } };
         var wheel = new WheelColumn (caption, max);
         wheel.changed.connect (() => changed ());
-        attach (label, column, 0);
-        attach (wheel, column, 1);
+        attach (wheel, column, 0);
         return wheel;
     }
 }

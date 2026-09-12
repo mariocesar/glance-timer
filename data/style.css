@@ -16,15 +16,25 @@ window.glance.csd {
   box-shadow: 0 6px 18px alpha(black, 0.45), 0 0 0 1px alpha(white, 0.07);
 }
 
+/* Spacing scale: 8, 12, 16, 20, 32 px. */
 window.glance .setup {
-  padding: 10px 18px 14px 20px;
+  padding: 20px;
 }
 
-window.glance .brand {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+window.glance button.about {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  background: none;
+  box-shadow: none;
+  border: none;
   color: @glance_dim;
+}
+
+window.glance button.about:hover {
+  color: @glance_fg;
+  background-color: alpha(@glance_fg, 0.06);
 }
 
 /* Duration | Until */
@@ -36,7 +46,7 @@ window.glance .mode-switch {
 
 window.glance .mode-switch button {
   min-height: 0;
-  padding: 2px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   background: none;
   box-shadow: none;
@@ -53,13 +63,6 @@ window.glance .mode-switch button:hover {
 window.glance .mode-switch button:checked {
   background-color: alpha(@glance_fg, 0.1);
   color: @glance_fg;
-}
-
-window.glance .duration-picker .caption {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: @glance_dim;
 }
 
 window.glance .duration-picker .separator {
@@ -123,13 +126,19 @@ window.glance button.start:focus-visible {
 
 window.glance .footer entry,
 window.glance .footer dropdown > button {
-  min-height: 28px;
+  min-height: 32px;
+  padding-top: 0;
+  padding-bottom: 0;
   border-radius: 8px;
   font-weight: normal;
   background-color: @glance_surface;
   box-shadow: none;
   border: none;
   font-size: 12px;
+}
+
+window.glance .footer dropdown image {
+  color: @glance_dim;
 }
 
 window.glance .footer entry:focus-within {
@@ -143,11 +152,55 @@ window.glance .countdown {
   font-feature-settings: "tnum";
 }
 
-window.glance .running {
-  padding: 16px 24px;
+window.glance .running,
+window.glance .finished {
+  padding: 20px;
 }
 
 window.glance .running-label {
   font-size: 13px;
   color: @glance_dim;
+}
+
+/* Finished: the whole window turns amber and breathes slowly. */
+@keyframes glance-finished {
+  from { background-color: @glance_accent; }
+  to { background-color: shade(@glance_accent, 0.86); }
+}
+
+window.glance.finished {
+  background-color: @glance_accent;
+  color: @glance_on_accent;
+  animation: glance-finished 1.4s ease-in-out infinite alternate;
+}
+
+window.glance .finished-title {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+window.glance .finished-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: alpha(@glance_on_accent, 0.75);
+}
+
+window.glance button.dismiss {
+  margin-top: 8px;
+  padding: 6px 20px;
+  border-radius: 999px;
+  border: none;
+  box-shadow: none;
+  font-weight: 600;
+  color: @glance_on_accent;
+  background-color: alpha(@glance_on_accent, 0.12);
+}
+
+window.glance button.dismiss:hover {
+  background-color: alpha(@glance_on_accent, 0.2);
+}
+
+window.glance button.dismiss:focus-visible {
+  outline: 2px solid alpha(@glance_on_accent, 0.8);
+  outline-offset: 2px;
 }
