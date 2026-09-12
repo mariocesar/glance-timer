@@ -5,6 +5,8 @@
     <file alias="icons/scalable/actions/glance-start-symbolic.svg">icons/actions/glance-start-symbolic.svg</file>
     <file alias="icons/scalable/actions/glance-about-symbolic.svg">icons/actions/glance-about-symbolic.svg</file>
     <file alias="icons/scalable/actions/glance-alarm-symbolic.svg">icons/actions/glance-alarm-symbolic.svg</file>
+    <file alias="icons/scalable/actions/glance-pause-symbolic.svg">icons/actions/glance-pause-symbolic.svg</file>
+    <file alias="icons/scalable/actions/glance-stop-symbolic.svg">icons/actions/glance-stop-symbolic.svg</file>
     <file alias="icons/scalable/apps/@APP_ID@.svg">icons/glance.svg</file>
   </gresource>
 </gresources>

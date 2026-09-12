@@ -21,7 +21,7 @@ window.glance .setup {
   padding: 20px;
 }
 
-window.glance button.about {
+window.glance button.icon {
   min-width: 28px;
   min-height: 28px;
   padding: 0;
@@ -32,7 +32,7 @@ window.glance button.about {
   color: @glance_dim;
 }
 
-window.glance button.about:hover {
+window.glance button.icon:hover {
   color: @glance_fg;
   background-color: alpha(@glance_fg, 0.06);
 }
@@ -146,10 +146,15 @@ window.glance .footer entry:focus-within {
   outline-offset: -2px;
 }
 
+/* Running: the remaining time fills the window. */
 window.glance .countdown {
-  font-size: 64px;
+  font-size: 96px;
   font-weight: 300;
   font-feature-settings: "tnum";
+}
+
+window.glance .countdown.hours {
+  font-size: 72px;
 }
 
 window.glance .running,
@@ -158,8 +163,38 @@ window.glance .finished {
 }
 
 window.glance .running-label {
-  font-size: 13px;
+  font-size: 15px;
   color: @glance_dim;
+}
+
+window.glance .status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: @glance_accent;
+}
+
+window.glance .running.paused .countdown {
+  color: @glance_dim;
+}
+
+/* Remaining time as a thin line that shrinks toward the left. */
+window.glance progressbar.remaining trough {
+  min-height: 3px;
+  border-radius: 999px;
+  border: none;
+  background-color: alpha(@glance_fg, 0.08);
+}
+
+window.glance progressbar.remaining progress {
+  min-height: 3px;
+  border-radius: 999px;
+  border: none;
+  background-color: @glance_accent;
+}
+
+window.glance .running.paused progressbar.remaining progress {
+  background-color: @glance_dim;
 }
 
 /* Finished: the whole window turns amber and breathes slowly. */

@@ -150,10 +150,49 @@ void add_window_tests () {
         app.timer.check ();
         assert_true (app.timer.state == TimerState.FINISHED);
         assert_true (win.has_css_class ("finished"));
+        assert_false (win.hide_on_close);
+        assert_true (press (Gdk.Key.space));
+        assert_true (app.timer.state == TimerState.FINISHED);
         assert_true (press (Gdk.Key.Return));
         assert_true (app.timer.state == TimerState.IDLE);
         assert_false (win.has_css_class ("finished"));
         app.timer.now = boottime;
+    });
+
+    Test.add_func ("/running/space-pauses-and-resumes", () => {
+        reset ();
+        fake_now = 1000 * Duration.SECOND;
+        app.timer.now = () => fake_now;
+        type ("10");
+        press (Gdk.Key.Return);
+        assert_true (win.hide_on_close);
+        var line = (Gtk.ProgressBar) find (win, typeof (Gtk.ProgressBar));
+        assert_true (line.fraction == 1.0);
+        fake_now += 4 * Duration.SECOND;
+        app.timer.tick ();
+        assert_true (Math.fabs (line.fraction - 0.6) < 1e-9);
+        assert_true (press (Gdk.Key.space));
+        assert_true (app.timer.state == TimerState.PAUSED);
+        assert_true (win.hide_on_close);
+        fake_now += 30 * Duration.SECOND;
+        assert_true (press (Gdk.Key.space));
+        assert_true (app.timer.state == TimerState.RUNNING);
+        assert_true (app.timer.remaining == 6 * Duration.SECOND);
+        press (Gdk.Key.Escape);
+        assert_true (app.timer.state == TimerState.IDLE);
+        assert_false (win.hide_on_close);
+        app.timer.now = boottime;
+    });
+
+    Test.add_func ("/running/until-ignores-space", () => {
+        reset ();
+        ((Gtk.ToggleButton) find (win, typeof (Gtk.ToggleButton), "Until")).active = true;
+        press (Gdk.Key.Return);
+        assert_true (app.timer.is_until);
+        assert_true (press (Gdk.Key.space));
+        assert_true (app.timer.state == TimerState.RUNNING);
+        press (Gdk.Key.Escape);
+        assert_true (app.timer.state == TimerState.IDLE);
     });
 
     Test.add_func ("/keys/running-and-modifiers", () => {

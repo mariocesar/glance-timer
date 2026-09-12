@@ -12,8 +12,13 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     WheelColumn until_minutes;
     Gtk.Label message;
     Gtk.Entry label_entry;
+    Gtk.Box running;
+    Gtk.Label status;
+    Gtk.Button pause_button;
+    Gtk.Image pause_icon;
     Gtk.Label countdown;
     Gtk.Label running_label;
+    Gtk.ProgressBar remaining_line;
     Gtk.Label finished_label;
     uint hint_source;
 
@@ -57,7 +62,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         // Until hint or validation error, next to the mode switch.
         message = new Gtk.Label ("") { xalign = 1, hexpand = true, css_classes = { "message" }, ellipsize = Pango.EllipsizeMode.END };
         var about = new Gtk.Button () {
-            css_classes = { "about" },
+            css_classes = { "icon" },
             valign = Gtk.Align.CENTER,
             tooltip_text = "About",
             child = new Gtk.Image.from_icon_name ("glance-about-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
@@ -147,12 +152,38 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     }
 
     Gtk.Widget build_running () {
-        countdown = new Gtk.Label ("") { css_classes = { "countdown" } };
+        // PAUSED indicator on the left, pause and stop on the right.
+        status = new Gtk.Label ("PAUSED") { css_classes = { "status" } };
+        pause_icon = new Gtk.Image.from_icon_name ("glance-pause-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION };
+        pause_button = new Gtk.Button () { css_classes = { "icon" }, valign = Gtk.Align.CENTER, child = pause_icon };
+        pause_button.clicked.connect (toggle_pause);
+        var stop_button = new Gtk.Button () {
+            css_classes = { "icon" },
+            valign = Gtk.Align.CENTER,
+            tooltip_text = "Stop (Esc)",
+            child = new Gtk.Image.from_icon_name ("glance-stop-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
+        };
+        stop_button.update_property (Gtk.AccessibleProperty.LABEL, "Stop timer", -1);
+        stop_button.clicked.connect (() => app.timer.stop ());
+        var controls = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
+        controls.append (pause_button);
+        controls.append (stop_button);
+        var header = new Gtk.CenterBox () { start_widget = status, end_widget = controls };
+
+        countdown = new Gtk.Label ("") { css_classes = { "countdown" }, accessible_role = Gtk.AccessibleRole.TIMER };
         running_label = new Gtk.Label ("") { css_classes = { "running-label" }, ellipsize = Pango.EllipsizeMode.END };
-        var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { valign = Gtk.Align.CENTER, css_classes = { "running" } };
-        box.append (countdown);
-        box.append (running_label);
-        return box;
+        var center = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { vexpand = true, valign = Gtk.Align.CENTER };
+        center.append (countdown);
+        center.append (running_label);
+
+        // Repeats the countdown, so screen readers skip it.
+        remaining_line = new Gtk.ProgressBar () { css_classes = { "remaining" }, accessible_role = Gtk.AccessibleRole.PRESENTATION };
+
+        running = new Gtk.Box (Gtk.Orientation.VERTICAL, 0) { css_classes = { "running" } };
+        running.append (header);
+        running.append (center);
+        running.append (remaining_line);
+        return running;
     }
 
     Gtk.Widget build_finished () {
@@ -187,6 +218,10 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
             switch (keyval) {
             case Gdk.Key.Return: case Gdk.Key.KP_Enter: case Gdk.Key.Escape:
                 app.timer.stop ();
+                return true;
+            case Gdk.Key.space:
+                // Also keeps Space from clicking a focused button.
+                toggle_pause ();
                 return true;
             default:
                 return false;
@@ -336,12 +371,37 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         } else {
             remove_css_class ("finished");
         }
-        if (state == TimerState.RUNNING || state == TimerState.PAUSED) refresh_running ();
+        var active = state == TimerState.RUNNING || state == TimerState.PAUSED;
+        // Closing the window while a timer counts keeps the process and the timer alive.
+        hide_on_close = active;
+        if (!active) return;
+        var paused = state == TimerState.PAUSED;
+        if (paused) {
+            running.add_css_class ("paused");
+            announce ("Paused", Gtk.AccessibleAnnouncementPriority.MEDIUM);
+        } else {
+            running.remove_css_class ("paused");
+        }
+        status.visible = paused;
+        pause_icon.icon_name = paused ? "glance-start-symbolic" : "glance-pause-symbolic";
+        pause_button.tooltip_text = paused ? "Resume (Space)" : "Pause (Space)";
+        pause_button.update_property (Gtk.AccessibleProperty.LABEL, paused ? "Resume timer" : "Pause timer", -1);
+        // Until timers cannot be paused.
+        pause_button.visible = !app.timer.is_until;
+        refresh_running ();
+    }
+
+    void toggle_pause () {
+        if (app.timer.state == TimerState.RUNNING) app.timer.pause ();
+        else app.timer.resume ();
     }
 
     void refresh_running () {
         if (app.timer.state == TimerState.IDLE) return;
         countdown.label = Duration.format (app.timer.remaining);
+        if (countdown.label.length > 5) countdown.add_css_class ("hours");
+        else countdown.remove_css_class ("hours");
+        remaining_line.fraction = 1.0 - app.timer.progress;
         running_label.label = app.label;
         running_label.visible = app.label != "";
     }
