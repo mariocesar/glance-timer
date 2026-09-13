@@ -22,10 +22,6 @@
       <default>true</default>
       <summary>Show the seconds selector</summary>
     </key>
-    <key name="notify" type="b">
-      <default>true</default>
-      <summary>Send a desktop notification when a timer finishes</summary>
-    </key>
     <key name="presentation-mode" type="s">
       <choices>
         <choice value="window"/>

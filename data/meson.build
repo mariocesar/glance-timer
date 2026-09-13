@@ -28,7 +28,7 @@ schema_file = configure_file(
 )
 
 # Compiled into the build dir so `meson devenv` runs work without installing.
-custom_target('gschemas',
+gschemas = custom_target('gschemas',
   input: schema_file,
   output: 'gschemas.compiled',
   command: [find_program('glib-compile-schemas'), '--strict', '--targetdir', meson.current_build_dir(), meson.current_build_dir()],

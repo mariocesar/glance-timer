@@ -195,6 +195,51 @@ void add_window_tests () {
         assert_true (app.timer.state == TimerState.IDLE);
     });
 
+    Test.add_func ("/alarm/choice-is-stored", () => {
+        reset ();
+        var dropdown = (Gtk.DropDown) find (win, typeof (Gtk.DropDown));
+        var preview = dropdown.get_next_sibling ();
+        assert_true (app.settings.get_string ("alarm") == "soft-chime");
+        assert_true (dropdown.selected == 0 && preview.sensitive);
+        dropdown.selected = 5;
+        assert_true (app.settings.get_string ("alarm") == "none");
+        assert_false (preview.sensitive);
+        dropdown.selected = 1;
+        assert_true (app.settings.get_string ("alarm") == "bell");
+        assert_true (preview.sensitive);
+        dropdown.selected = 0;
+    });
+
+    Test.add_func ("/alarm/play-and-stop", () => {
+        reset ();
+        app.play_alarm ("none");
+        assert_null (app.playing_alarm);
+        Test.expect_message (null, LogLevelFlags.LEVEL_WARNING, "*missing*");
+        app.play_alarm ("missing");
+        Test.assert_expected_messages ();
+        assert_null (app.playing_alarm);
+        // Every bundled sound starts decoding without a GStreamer error (which would log a fatal warning here).
+        // Replacing a sound right away also exercises stopping one that is still preparing.
+        foreach (var id in new string[] { "soft-chime", "bell", "digital", "pulse", "classic" }) {
+            app.play_alarm (id);
+            var loop = new MainLoop ();
+            Timeout.add (300, () => {
+                loop.quit ();
+                return Source.REMOVE;
+            });
+            loop.run ();
+            assert_true (app.playing_alarm == id);
+            app.play_alarm (id);
+        }
+        // Starting a timer silences a preview; so does dismissing a finished one.
+        type ("5");
+        press (Gdk.Key.Return);
+        assert_null (app.playing_alarm);
+        app.play_alarm ("bell");
+        press (Gdk.Key.Escape);
+        assert_null (app.playing_alarm);
+    });
+
     Test.add_func ("/keys/running-and-modifiers", () => {
         reset ();
         type ("5");
@@ -217,13 +262,14 @@ int main (string[] args) {
     Test.init (ref args);
     app = new Glance.Application ();
     app.flags |= ApplicationFlags.NON_UNIQUE;
+    // Connected before any other handler: no presenting and no alarm when a test timer finishes.
+    app.timer.finished.connect (() => Signal.stop_emission_by_name (app.timer, "finished"));
     try {
         app.register ();
     } catch (Error e) {
         error ("register: %s", e.message);
     }
-    // Connected before the window's handler: keeps the hidden test window from presenting itself on finish.
-    app.timer.finished.connect (() => Signal.stop_emission_by_name (app.timer, "finished"));
+    app.settings.set_double ("alarm-volume", 0.0);
     win = new TimerWindow (app);
     var controllers = ((Gtk.Widget) win).observe_controllers ();
     for (uint i = 0; i < controllers.get_n_items (); i++) {

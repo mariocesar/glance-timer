@@ -1,5 +1,7 @@
 public class Glance.TimerWindow : Gtk.ApplicationWindow {
     const string[] ALARMS = { "Soft chime", "Bell", "Digital", "Pulse", "Classic", "Silent", null };
+    // GSettings values for ALARMS, in the same order.
+    const string[] ALARM_IDS = { "soft-chime", "bell", "digital", "pulse", "classic", "none" };
 
     unowned Application app;
     DigitEntry entry = new DigitEntry ();
@@ -126,10 +128,28 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         var alarm_caption = new Gtk.Label ("Alarm sound") { visible = false };
         // GtkDropDown names itself after the selection; a labelled-by relation takes precedence.
         alarm.update_relation (Gtk.AccessibleRelation.LABELLED_BY, alarm_caption, null, -1);
+        var preview = new Gtk.Button () {
+            css_classes = { "icon" },
+            valign = Gtk.Align.CENTER,
+            tooltip_text = "Preview",
+            child = new Gtk.Image.from_icon_name ("glance-preview-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
+        };
+        preview.update_property (Gtk.AccessibleProperty.LABEL, "Preview alarm sound", -1);
+        preview.clicked.connect (() => app.play_alarm (ALARM_IDS[alarm.selected]));
+        var stored = app.settings.get_string ("alarm");
+        for (uint i = 0; i < ALARM_IDS.length; i++) {
+            if (ALARM_IDS[i] == stored) alarm.selected = i;
+        }
+        preview.sensitive = ALARM_IDS[alarm.selected] != "none";
+        alarm.notify["selected"].connect (() => {
+            app.settings.set_string ("alarm", ALARM_IDS[alarm.selected]);
+            preview.sensitive = ALARM_IDS[alarm.selected] != "none";
+        });
         var footer = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12) { css_classes = { "footer" } };
         footer.append (label_entry);
         footer.append (alarm_caption);
         footer.append (alarm);
+        footer.append (preview);
 
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 16) { css_classes = { "setup" } };
         box.append (header);

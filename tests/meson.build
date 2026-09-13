@@ -20,8 +20,9 @@ foreach name : ['parser', 'deadline']
   test(name, exe, suite: 'unit', protocol: 'tap', args: ['--tap'])
 endforeach
 
-# Needs a display; skips itself without one.
+# Needs a display; skips itself without one. Settings stay in memory, never in the user's dconf.
 foreach name : ['picker', 'window']
   exe = executable(name + '-test', name + '-test.vala', app_sources, dependencies: app_deps)
-  test(name, exe, suite: 'widget', protocol: 'tap', args: ['--tap'])
+  test(name, exe, suite: 'widget', protocol: 'tap', args: ['--tap'], depends: gschemas,
+    env: {'GSETTINGS_SCHEMA_DIR': meson.project_build_root() / 'data', 'GSETTINGS_BACKEND': 'memory'})
 endforeach
