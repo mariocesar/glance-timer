@@ -69,6 +69,7 @@ expect 0 "" --hide
 kill -0 $primary 2>/dev/null || { echo "FAIL: hiding a running timer quit the app"; failed=1; }
 expect 0 "" --show
 expect 1 "layer-shell" --pin
+expect 1 "layer-shell" --peek
 expect 0 "" --window
 expect 0 "" --hide
 expect 0 "" --stop

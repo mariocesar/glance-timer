@@ -256,6 +256,37 @@ void add_window_tests () {
         ((Gtk.Entry) find (win, typeof (Gtk.Entry))).text = "";
     });
 
+    Test.add_func ("/peek/states", () => {
+        if (!app.can_pin) {
+            Test.skip ("no layer shell");
+            return;
+        }
+        reset ();
+        fake_now = 1000 * Duration.SECOND;
+        app.timer.now = () => fake_now;
+        app.label = "Tea";
+        app.timer.start (90 * Duration.SECOND);
+        var peek = new PeekWindow (app, "bottom-left");
+        var labels = new Gtk.Label[0];
+        for (var child = peek.child.get_first_child (); child != null; child = child.get_next_sibling ()) {
+            if (child is Gtk.Label) labels += (Gtk.Label) child;
+        }
+        assert_true (labels[0].label == "01:30" && labels[1].label == "Tea");
+        fake_now += 30 * Duration.SECOND;
+        app.timer.pause ();
+        assert_true (labels[0].label == "01:00" && labels[1].label == "Paused · Tea");
+        assert_true (peek.has_css_class ("paused"));
+        app.timer.resume ();
+        fake_now += 60 * Duration.SECOND;
+        app.timer.check ();
+        assert_true (labels[0].label == "Time's up" && peek.has_css_class ("finished"));
+        app.timer.stop ();
+        app.label = "";
+        app.timer.now = boottime;
+        peek.destroy ();
+        peek.dispose ();
+    });
+
     Test.add_func ("/keys/running-and-modifiers", () => {
         reset ();
         type ("5");

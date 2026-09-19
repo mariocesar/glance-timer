@@ -5,7 +5,7 @@ namespace Glance {
 
     public class Application : Gtk.Application {
         // Options that each ask for one thing; a positional duration counts as one more.
-        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide", "pin", "window" };
+        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide", "pin", "peek", "window" };
 
         // The one timer; windows only display it.
         public Timer timer { get; default = new Timer (); }
@@ -17,7 +17,7 @@ namespace Glance {
         Gst.Element? player;
         // Whether the compositor offers layer shell, which Pinned needs.
         public bool can_pin { get; private set; }
-        // Presentation: "window" or "pinned".
+        // Presentation: "window", "pinned" or "peek". Peek applies only while a timer is active.
         string mode = "window";
 
         public Application () {
@@ -32,6 +32,7 @@ namespace Glance {
             add_main_option ("show", 0, 0, OptionArg.NONE, "Show the window", null);
             add_main_option ("hide", 0, 0, OptionArg.NONE, "Hide the window, like closing it", null);
             add_main_option ("pin", 0, 0, OptionArg.NONE, "Keep Glance above other windows", null);
+            add_main_option ("peek", 0, 0, OptionArg.NONE, "Show the running timer small, in a corner", null);
             add_main_option ("window", 0, 0, OptionArg.NONE, "Show Glance as a normal window", null);
             add_main_option (OPTION_REMAINING, 0, 0, OptionArg.STRING_ARRAY, "", "[DURATION]");
             set_option_context_summary ("""Start a timer, or control the one already running.
@@ -89,11 +90,21 @@ namespace Glance {
             // is_supported () logs a critical on non-Wayland displays, so check the backend first.
             var wayland = Type.from_name ("GdkWaylandDisplay");
             can_pin = wayland != 0 && Gdk.Display.get_default ().get_type ().is_a (wayland) && GtkLayerShell.is_supported ();
-            if (settings.get_string ("presentation-mode") == "pinned" && can_pin) mode = "pinned";
+            if (can_pin) mode = settings.get_string ("presentation-mode");
             timer.finished.connect (() => play_alarm (settings.get_string ("alarm")));
-            // Dismissing, stopping or starting silences the alarm or a preview.
             timer.notify["state"].connect (() => {
+                // Dismissing, stopping or starting silences the alarm or a preview.
                 if (timer.state != TimerState.FINISHED) stop_alarm ();
+                // In Peek mode a starting timer turns the window into Peek, and Peek goes away with the timer.
+                // Deferred: this can run inside a handler of the window being replaced.
+                if (mode == "peek") Idle.add (() => {
+                    var window = active_window;
+                    if (window == null || mode != "peek") return Source.REMOVE;
+                    var active = timer.state != TimerState.IDLE;
+                    if (active && !(window is PeekWindow)) replace_window ();
+                    else if (!active && window is PeekWindow) retire (window);
+                    return Source.REMOVE;
+                });
             });
         }
 
@@ -142,30 +153,41 @@ namespace Glance {
             main_window ().present ();
         }
 
-        // The current window, or a new one in the current mode.
+        // The current window, or a new one for the current mode and timer state.
         Gtk.Window main_window () {
-            return active_window ?? new TimerWindow (this, mode == "pinned");
+            return active_window ?? build_window ();
         }
 
-        // Shows Glance in the given mode and remembers it. Changing mode replaces the window,
-        // because layer shell must be set up before a window is shown.
+        Gtk.Window build_window () {
+            if (mode == "peek" && timer.state != TimerState.IDLE) return new PeekWindow (this, settings.get_string ("peek-corner"));
+            return new TimerWindow (this, mode == "pinned");
+        }
+
+        // Shows Glance in the given mode and remembers it.
         public void present_mode (string new_mode) {
             settings.set_string ("presentation-mode", new_mode);
-            var old = active_window as TimerWindow;
-            if (new_mode == mode && old != null) {
-                old.present ();
+            if (new_mode == mode && active_window != null) {
+                active_window.present ();
                 return;
             }
             mode = new_mode;
-            var window = new TimerWindow (this, mode == "pinned");
-            if (old != null) window.take_setup (old);
+            replace_window ();
+        }
+
+        // A new window replaces the old one, because layer shell must be set up before a window is shown.
+        void replace_window () {
+            var old = active_window;
+            var window = build_window ();
+            if (window is TimerWindow && old is TimerWindow) ((TimerWindow) window).take_setup ((TimerWindow) old);
             window.present ();
-            if (old != null) {
-                old.destroy ();
-                // Widget closures reference the window, so destroy () alone never disposes it and it would
-                // keep following the timer; dispose () breaks the cycle.
-                old.dispose ();
-            }
+            if (old != null) retire (old);
+        }
+
+        // Widget closures reference the window, so destroy () alone never disposes it and it would
+        // keep following the timer; dispose () breaks the cycle.
+        void retire (Gtk.Window window) {
+            window.destroy ();
+            window.dispose ();
         }
 
         // Runs in the primary instance for every invocation, local or forwarded. Input was validated locally.
@@ -221,6 +243,10 @@ namespace Glance {
             } else if (options.contains ("pin")) {
                 if (can_pin) present_mode ("pinned");
                 else error = "this desktop can't keep windows above others (no layer-shell support); Glance stays a normal window";
+            } else if (options.contains ("peek")) {
+                if (!can_pin) error = "this desktop can't show Peek (no layer-shell support); Glance stays a normal window";
+                else if (state == TimerState.IDLE) error = "no timer is running; Peek shows a running timer";
+                else present_mode ("peek");
             } else if (options.contains ("window")) {
                 present_mode ("window");
             } else if (options.contains ("hide")) {
