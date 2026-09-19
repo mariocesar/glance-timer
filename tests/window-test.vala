@@ -240,6 +240,22 @@ void add_window_tests () {
         assert_null (app.playing_alarm);
     });
 
+    Test.add_func ("/mode/replacement-window", () => {
+        reset ();
+        type ("1.2.3");
+        ((Gtk.Entry) find (win, typeof (Gtk.Entry))).text = "Review PR";
+        var next = new TimerWindow (app);
+        next.take_setup (win);
+        assert_true (((Gtk.Entry) find (next, typeof (Gtk.Entry))).text == "Review PR");
+        assert_true (((DurationPicker) find (next, typeof (DurationPicker))).duration == Duration.HOUR + 2 * Duration.MINUTE + 3 * Duration.SECOND);
+        // Destroyed windows stop following the timer, so they cannot re-present themselves on finish.
+        assert_true (SignalHandler.find (app.timer, SignalMatchType.DATA, 0, 0, null, null, next) != 0);
+        next.destroy ();
+        next.dispose ();
+        assert_true (SignalHandler.find (app.timer, SignalMatchType.DATA, 0, 0, null, null, next) == 0);
+        ((Gtk.Entry) find (win, typeof (Gtk.Entry))).text = "";
+    });
+
     Test.add_func ("/keys/running-and-modifiers", () => {
         reset ();
         type ("5");

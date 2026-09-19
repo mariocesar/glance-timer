@@ -5,7 +5,7 @@ namespace Glance {
 
     public class Application : Gtk.Application {
         // Options that each ask for one thing; a positional duration counts as one more.
-        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide" };
+        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide", "pin", "window" };
 
         // The one timer; windows only display it.
         public Timer timer { get; default = new Timer (); }
@@ -15,6 +15,10 @@ namespace Glance {
         // Id of the sound playing now, null when silent.
         public string? playing_alarm { get; private set; }
         Gst.Element? player;
+        // Whether the compositor offers layer shell, which Pinned needs.
+        public bool can_pin { get; private set; }
+        // Presentation: "window" or "pinned".
+        string mode = "window";
 
         public Application () {
             Object (application_id: Config.APP_ID, flags: ApplicationFlags.HANDLES_COMMAND_LINE, version: Config.VERSION);
@@ -27,6 +31,8 @@ namespace Glance {
             add_main_option ("add", 'a', 0, OptionArg.STRING, "Add time to the timer", "DURATION");
             add_main_option ("show", 0, 0, OptionArg.NONE, "Show the window", null);
             add_main_option ("hide", 0, 0, OptionArg.NONE, "Hide the window, like closing it", null);
+            add_main_option ("pin", 0, 0, OptionArg.NONE, "Keep Glance above other windows", null);
+            add_main_option ("window", 0, 0, OptionArg.NONE, "Show Glance as a normal window", null);
             add_main_option (OPTION_REMAINING, 0, 0, OptionArg.STRING_ARRAY, "", "[DURATION]");
             set_option_context_summary ("""Start a timer, or control the one already running.
 
@@ -80,6 +86,10 @@ namespace Glance {
             unowned string[]? no_args = null;
             Gst.init (ref no_args);
             settings = new GLib.Settings (Config.APP_ID);
+            // is_supported () logs a critical on non-Wayland displays, so check the backend first.
+            var wayland = Type.from_name ("GdkWaylandDisplay");
+            can_pin = wayland != 0 && Gdk.Display.get_default ().get_type ().is_a (wayland) && GtkLayerShell.is_supported ();
+            if (settings.get_string ("presentation-mode") == "pinned" && can_pin) mode = "pinned";
             timer.finished.connect (() => play_alarm (settings.get_string ("alarm")));
             // Dismissing, stopping or starting silences the alarm or a preview.
             timer.notify["state"].connect (() => {
@@ -129,8 +139,33 @@ namespace Glance {
         }
 
         public override void activate () {
-            var window = active_window ?? new TimerWindow (this);
+            main_window ().present ();
+        }
+
+        // The current window, or a new one in the current mode.
+        Gtk.Window main_window () {
+            return active_window ?? new TimerWindow (this, mode == "pinned");
+        }
+
+        // Shows Glance in the given mode and remembers it. Changing mode replaces the window,
+        // because layer shell must be set up before a window is shown.
+        public void present_mode (string new_mode) {
+            settings.set_string ("presentation-mode", new_mode);
+            var old = active_window as TimerWindow;
+            if (new_mode == mode && old != null) {
+                old.present ();
+                return;
+            }
+            mode = new_mode;
+            var window = new TimerWindow (this, mode == "pinned");
+            if (old != null) window.take_setup (old);
             window.present ();
+            if (old != null) {
+                old.destroy ();
+                // Widget closures reference the window, so destroy () alone never disposes it and it would
+                // keep following the timer; dispose () breaks the cycle.
+                old.dispose ();
+            }
         }
 
         // Runs in the primary instance for every invocation, local or forwarded. Input was validated locally.
@@ -155,7 +190,7 @@ namespace Glance {
                     timer.start_until (Deadline.resolve (until, new DateTime.now_local ()).to_unix () * Duration.SECOND);
                 }
                 // Show a hidden or new window, but don't take focus from a visible one.
-                var window = active_window ?? new TimerWindow (this);
+                var window = main_window ();
                 if (!window.visible) window.present ();
             } else if (options.contains ("pause")) {
                 if (state == TimerState.RUNNING && timer.is_until) error = "Until timers can't be paused; use --stop";
@@ -183,6 +218,11 @@ namespace Glance {
                 }
             } else if (add != null) {
                 if (!timer.add (Duration.parse (add))) error = not_running;
+            } else if (options.contains ("pin")) {
+                if (can_pin) present_mode ("pinned");
+                else error = "this desktop can't keep windows above others (no layer-shell support); Glance stays a normal window";
+            } else if (options.contains ("window")) {
+                present_mode ("window");
             } else if (options.contains ("hide")) {
                 if (active_window != null) active_window.close ();
             } else {

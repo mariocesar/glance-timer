@@ -29,7 +29,7 @@
         <choice value="peek"/>
       </choices>
       <default>'window'</default>
-      <summary>Presentation mode used when a timer starts</summary>
+      <summary>Presentation mode, remembered between launches</summary>
     </key>
     <key name="peek-corner" type="s">
       <choices>

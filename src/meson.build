@@ -13,6 +13,8 @@ picker_sources = files('duration-picker.vala')
 app_sources = [files('application.vala', 'timer-window.vala'), picker_sources, core_sources, config_vala, resources]
 app_deps = core_deps + [dependency('gstreamer-1.0'), 
   dependency('gio-2.0', version: '>= 2.80'),
+  # Must link ahead of gtk4 so it loads before libwayland-client.
+  dependency('gtk4-layer-shell-0', version: '>= 1.0'),
   dependency('gtk4', version: '>= 4.20'),
 ]
 

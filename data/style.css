@@ -37,6 +37,10 @@ window.glance button.icon:hover {
   background-color: alpha(@glance_fg, 0.06);
 }
 
+window.glance button.icon.active {
+  color: @glance_accent;
+}
+
 /* Duration | Until */
 window.glance .mode-switch {
   background-color: @glance_surface;

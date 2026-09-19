@@ -1,9 +1,23 @@
 #!/bin/sh
 # End-to-end CLI test: a real primary instance and forwarded commands, on a private D-Bus session
 # and GTK's headless Broadway display so nothing reaches the user's desktop or running Glance.
-# Usage: dbus-run-session -- sh cli-test.sh path/to/glance
+# Usage: sh cli-test.sh path/to/glance
 GLANCE=$1
 command -v gtk4-broadwayd >/dev/null || { echo "gtk4-broadwayd not found"; exit 77; }
+command -v dbus-run-session >/dev/null || { echo "dbus-run-session not found"; exit 77; }
+
+# Re-run inside a private bus with a private runtime directory. Services the bus activates
+# (the accessibility bus in particular) would otherwise replace sockets under the user's
+# /run/user/UID and break them for the whole desktop session when the test ends.
+if [ -z "$GLANCE_TEST_ISOLATED" ]; then
+    runtime=$(mktemp -d)
+    chmod 700 "$runtime"
+    GLANCE_TEST_ISOLATED=1 XDG_RUNTIME_DIR=$runtime GIO_USE_VFS=local GDK_DEBUG=no-portals NO_AT_BRIDGE=1 \
+        dbus-run-session -- sh "$0" "$@"
+    code=$?
+    rm -rf "$runtime"
+    exit $code
+fi
 display=:$(( $$ % 60 + 30 ))
 gtk4-broadwayd "$display" >/dev/null 2>&1 &
 broadway=$!
@@ -54,6 +68,8 @@ expect 1 "can't be restarted" --reset
 expect 0 "" --hide
 kill -0 $primary 2>/dev/null || { echo "FAIL: hiding a running timer quit the app"; failed=1; }
 expect 0 "" --show
+expect 1 "layer-shell" --pin
+expect 0 "" --window
 expect 0 "" --hide
 expect 0 "" --stop
 for i in $(seq 30); do kill -0 $primary 2>/dev/null || break; sleep 0.1; done

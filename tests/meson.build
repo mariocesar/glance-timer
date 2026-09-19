@@ -3,11 +3,8 @@ test('cli-version', glance, args: ['--version'], suite: 'app', timeout: 10,
   env: {'WAYLAND_DISPLAY': '', 'DISPLAY': ''})
 
 # A real primary instance plus forwarded commands, isolated on a private bus and a headless display.
-dbus_run_session = find_program('dbus-run-session', required: false)
-if dbus_run_session.found()
-  test('cli', dbus_run_session, args: ['--', 'sh', files('cli-test.sh'), glance], suite: 'app', timeout: 60,
-    depends: gschemas, env: {'GSETTINGS_SCHEMA_DIR': meson.project_build_root() / 'data'})
-endif
+test('cli', find_program('sh'), args: [files('cli-test.sh'), glance], suite: 'app', timeout: 60,
+  depends: gschemas, env: {'GSETTINGS_SCHEMA_DIR': meson.project_build_root() / 'data'})
 
 desktop_file_validate = find_program('desktop-file-validate', required: false)
 if desktop_file_validate.found()

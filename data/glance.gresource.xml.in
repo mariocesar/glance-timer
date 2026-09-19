@@ -7,6 +7,7 @@
     <file alias="icons/scalable/actions/glance-alarm-symbolic.svg">icons/actions/glance-alarm-symbolic.svg</file>
     <file alias="icons/scalable/actions/glance-pause-symbolic.svg">icons/actions/glance-pause-symbolic.svg</file>
     <file alias="icons/scalable/actions/glance-stop-symbolic.svg">icons/actions/glance-stop-symbolic.svg</file>
+    <file alias="icons/scalable/actions/glance-pin-symbolic.svg">icons/actions/glance-pin-symbolic.svg</file>
     <file alias="icons/scalable/actions/glance-preview-symbolic.svg">icons/actions/glance-preview-symbolic.svg</file>
     <file>sounds/soft-chime.ogg</file>
     <file>sounds/bell.ogg</file>
