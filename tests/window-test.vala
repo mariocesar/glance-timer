@@ -210,6 +210,26 @@ void add_window_tests () {
         dropdown.selected = 0;
     });
 
+    Test.add_func ("/settings/first-run-and-stored", () => {
+        reset ();
+        // With every key reset the window sees what a first run sees.
+        foreach (var key in app.settings.settings_schema.list_keys ()) app.settings.reset (key);
+        var first = new TimerWindow (app);
+        assert_true (((Gtk.DropDown) find (first, typeof (Gtk.DropDown))).selected == 0);
+        assert_true (app.settings.get_double ("alarm-volume") == 0.8);
+        assert_true (app.settings.get_string ("presentation-mode") == "window");
+        assert_true (app.settings.get_string ("peek-corner") == "top-right");
+        first.destroy ();
+        first.dispose ();
+        app.settings.set_string ("alarm", "pulse");
+        var stored = new TimerWindow (app);
+        assert_true (((Gtk.DropDown) find (stored, typeof (Gtk.DropDown))).selected == 3);
+        stored.destroy ();
+        stored.dispose ();
+        app.settings.reset ("alarm");
+        app.settings.set_double ("alarm-volume", 0.0);
+    });
+
     Test.add_func ("/alarm/play-and-stop", () => {
         reset ();
         app.play_alarm ("none");

@@ -23,7 +23,18 @@ gtk4-broadwayd "$display" >/dev/null 2>&1 &
 broadway=$!
 trap 'kill $primary $broadway 2>/dev/null' EXIT
 # GTK_A11Y=none: on Broadway GTK picks its test accessibility backend, which crashes in announce ().
-export GDK_BACKEND=broadway BROADWAY_DISPLAY=$display GSETTINGS_BACKEND=memory GTK_A11Y=none
+export GDK_BACKEND=broadway BROADWAY_DISPLAY=$display GTK_A11Y=none
+# Settings from an older build: removed keys, an invalid alarm, and Pinned stored on a desktop without layer shell.
+export GSETTINGS_BACKEND=keyfile XDG_CONFIG_HOME=$XDG_RUNTIME_DIR/config
+mkdir -p "$XDG_CONFIG_HOME/glib-2.0/settings"
+cat > "$XDG_CONFIG_HOME/glib-2.0/settings/keyfile" <<EOF
+[io/github/mariocesar/Glance]
+notify=true
+show-seconds=false
+opacity=0.7
+alarm='nonsense'
+presentation-mode='pinned'
+EOF
 sleep 0.5
 failed=0
 
@@ -71,6 +82,8 @@ expect 0 "" --show
 expect 1 "layer-shell" --pin
 expect 1 "layer-shell" --peek
 expect 0 "" --window
+[ "$(gsettings get io.github.mariocesar.Glance presentation-mode)" = "'window'" ] || { echo "FAIL: --window was not stored"; failed=1; }
+[ "$(gsettings get io.github.mariocesar.Glance alarm)" = "'soft-chime'" ] || { echo "FAIL: an invalid stored alarm was not replaced by the default"; failed=1; }
 expect 0 "" --hide
 expect 0 "" --stop
 for i in $(seq 30); do kill -0 $primary 2>/dev/null || break; sleep 0.1; done
