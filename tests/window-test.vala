@@ -150,12 +150,14 @@ void add_window_tests () {
         app.timer.check ();
         assert_true (app.timer.state == TimerState.FINISHED);
         assert_true (win.has_css_class ("finished"));
+        assert_true (((Gtk.Button) win.get_focus ()).label == "Dismiss");
         assert_false (win.hide_on_close);
         assert_true (press (Gdk.Key.space));
         assert_true (app.timer.state == TimerState.FINISHED);
         assert_true (press (Gdk.Key.Return));
         assert_true (app.timer.state == TimerState.IDLE);
         assert_false (win.has_css_class ("finished"));
+        assert_true (win.get_focus () is WheelColumn);
         app.timer.now = boottime;
     });
 
@@ -171,10 +173,14 @@ void add_window_tests () {
         fake_now += 4 * Duration.SECOND;
         app.timer.tick ();
         assert_true (Math.fabs (line.fraction - 0.6) < 1e-9);
-        assert_true (press (Gdk.Key.space));
+        // Pause has focus, so Space goes to the button; with nothing focused the shortcut handles it.
+        assert_true (win.get_focus ().tooltip_text == "Pause (Space)");
+        assert_false (press (Gdk.Key.space));
+        ((Gtk.Button) win.get_focus ()).clicked ();
         assert_true (app.timer.state == TimerState.PAUSED);
         assert_true (win.hide_on_close);
         fake_now += 30 * Duration.SECOND;
+        win.set_focus (null);
         assert_true (press (Gdk.Key.space));
         assert_true (app.timer.state == TimerState.RUNNING);
         assert_true (app.timer.remaining == 6 * Duration.SECOND);
@@ -189,6 +195,8 @@ void add_window_tests () {
         ((Gtk.ToggleButton) find (win, typeof (Gtk.ToggleButton), "Until")).active = true;
         press (Gdk.Key.Return);
         assert_true (app.timer.is_until);
+        // Stop has focus in an Until timer; Space must not press it.
+        assert_true (win.get_focus ().tooltip_text == "Stop (Esc)");
         assert_true (press (Gdk.Key.space));
         assert_true (app.timer.state == TimerState.RUNNING);
         press (Gdk.Key.Escape);

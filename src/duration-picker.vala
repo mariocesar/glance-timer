@@ -256,9 +256,9 @@ public class Glance.DurationPicker : Gtk.Grid {
         column_spacing = 8;
         update_property (Gtk.AccessibleProperty.LABEL, "Duration", -1);
         hours = add_wheel ("Hours", 23, 0);
-        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 0);
+        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER, accessible_role = Gtk.AccessibleRole.PRESENTATION }, 1, 0);
         minutes = add_wheel ("Minutes", 59, 2);
-        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 3, 0);
+        attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER, accessible_role = Gtk.AccessibleRole.PRESENTATION }, 3, 0);
         seconds = add_wheel ("Seconds", 59, 4);
     }
 

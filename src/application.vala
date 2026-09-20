@@ -82,6 +82,8 @@ namespace Glance {
             Gtk.Settings.get_default ().gtk_interface_color_scheme = Gtk.InterfaceColorScheme.DARK;
             var css = new Gtk.CssProvider ();
             css.load_from_resource (resource_base_path + "/style.css");
+            // An app stylesheet only matches prefers-reduced-motion when told the desktop preference.
+            Gtk.Settings.get_default ().bind_property ("gtk-interface-reduced-motion", css, "prefers-reduced-motion", BindingFlags.SYNC_CREATE);
             add_provider_for_display (Gdk.Display.get_default (), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
             unowned string[]? no_args = null;

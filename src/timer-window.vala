@@ -17,12 +17,16 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     Gtk.Box running;
     Gtk.Label status;
     Gtk.Button pause_button;
+    Gtk.Button stop_button;
+    Gtk.Button dismiss_button;
     Gtk.Image pause_icon;
     Gtk.Label countdown;
     Gtk.Label running_label;
     Gtk.ProgressBar remaining_line;
     Gtk.Label finished_label;
     uint hint_source;
+    // Page that last received keyboard focus.
+    string focused_page = "";
 
     // A pinned window is a layer-shell overlay above other windows; the caller checks support.
     public TimerWindow (Application app, bool pinned = false) {
@@ -231,7 +235,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         until_hours = new WheelColumn ("Hour", 23);
         until_minutes = new WheelColumn ("Minute", 59);
         grid.attach (until_hours, 0, 0);
-        grid.attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER }, 1, 0);
+        grid.attach (new Gtk.Label (":") { css_classes = { "separator" }, valign = Gtk.Align.CENTER, accessible_role = Gtk.AccessibleRole.PRESENTATION }, 1, 0);
         grid.attach (until_minutes, 2, 0);
         until_hours.changed.connect (on_until_changed);
         until_minutes.changed.connect (on_until_changed);
@@ -240,14 +244,16 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
 
     Gtk.Widget build_running (bool pinned) {
         // PAUSED indicator on the left, pause and stop on the right.
-        status = new Gtk.Label ("PAUSED") { css_classes = { "status" } };
+        status = new Gtk.Label ("Paused") { css_classes = { "status" } };
         pause_icon = new Gtk.Image.from_icon_name ("glance-pause-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION };
-        pause_button = new Gtk.Button () { css_classes = { "icon" }, valign = Gtk.Align.CENTER, child = pause_icon };
+        // Clicks leave focus on Pause, so a later Space never presses the button clicked last.
+        pause_button = new Gtk.Button () { css_classes = { "icon" }, valign = Gtk.Align.CENTER, child = pause_icon, focus_on_click = false };
         pause_button.clicked.connect (toggle_pause);
-        var stop_button = new Gtk.Button () {
+        stop_button = new Gtk.Button () {
             css_classes = { "icon" },
             valign = Gtk.Align.CENTER,
             tooltip_text = "Stop (Esc)",
+            focus_on_click = false,
             child = new Gtk.Image.from_icon_name ("glance-stop-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
         };
         stop_button.update_property (Gtk.AccessibleProperty.LABEL, "Stop timer", -1);
@@ -277,12 +283,12 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     Gtk.Widget build_finished () {
         var title = new Gtk.Label ("Time's up") { css_classes = { "finished-title" } };
         finished_label = new Gtk.Label ("") { css_classes = { "finished-label" }, ellipsize = Pango.EllipsizeMode.END };
-        var dismiss = new Gtk.Button.with_label ("Dismiss") { css_classes = { "dismiss" }, halign = Gtk.Align.CENTER, tooltip_text = "Dismiss (Enter)" };
-        dismiss.clicked.connect (() => app.timer.stop ());
+        dismiss_button = new Gtk.Button.with_label ("Dismiss") { css_classes = { "dismiss" }, halign = Gtk.Align.CENTER, tooltip_text = "Dismiss (Enter)" };
+        dismiss_button.clicked.connect (() => app.timer.stop ());
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 8) { valign = Gtk.Align.CENTER, css_classes = { "finished" } };
         box.append (title);
         box.append (finished_label);
-        box.append (dismiss);
+        box.append (dismiss_button);
         return box;
     }
 
@@ -308,7 +314,9 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
                 app.timer.stop ();
                 return true;
             case Gdk.Key.space:
-                // Also keeps Space from clicking a focused button.
+                // A focused button takes Space (Pin, reached with Tab), but Space never stops or dismisses.
+                var focus = get_focus ();
+                if (focus is Gtk.Button && focus != stop_button && app.timer.state != TimerState.FINISHED) return false;
                 toggle_pause ();
                 return true;
             default:
@@ -443,6 +451,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
 
     void set_message (string text, bool error) {
         message.label = text;
+        if (error) announce (text, Gtk.AccessibleAnnouncementPriority.MEDIUM);
         if (error) message.add_css_class ("error");
         else message.remove_css_class ("error");
     }
@@ -450,7 +459,15 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     void sync_page () {
         var state = app.timer.state;
         var finished = state == TimerState.FINISHED;
-        pages.visible_child_name = state == TimerState.IDLE ? "setup" : finished ? "finished" : "running";
+        var page = state == TimerState.IDLE ? "setup" : finished ? "finished" : "running";
+        pages.visible_child_name = page;
+        // Focus follows the page, so Tab and screen readers never start from a hidden control.
+        if (page != focused_page) {
+            focused_page = page;
+            if (page == "setup") (until_toggle.active ? until_hours : picker.hours).grab_focus ();
+            else if (finished) dismiss_button.grab_focus ();
+            else (app.timer.is_until ? stop_button : pause_button).grab_focus ();
+        }
         // The whole surface changes color so completion is hard to miss.
         if (finished) {
             add_css_class ("finished");

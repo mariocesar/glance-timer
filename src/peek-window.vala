@@ -47,6 +47,7 @@ public class Glance.PeekWindow : Gtk.ApplicationWindow {
     }
 
     void on_finished () {
+        announce ("Time's up", Gtk.AccessibleAnnouncementPriority.HIGH);
         if (!get_visible ()) present ();
     }
 

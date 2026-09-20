@@ -1,10 +1,12 @@
 @define-color glance_bg #15171b;
 @define-color glance_surface #1d2025;
 @define-color glance_fg #e9e6e1;
-@define-color glance_dim #80838b;
+@define-color glance_dim #8a8d95;
 @define-color glance_accent #f2a93b;
 @define-color glance_on_accent #1a1407;
 @define-color glance_error #ef7564;
+
+/* Font sizes in pt (px × 3/4) so they follow the desktop text scale; px ignores it. */
 
 window.glance {
   background-color: @glance_bg;
@@ -48,6 +50,12 @@ window.glance button.icon.active {
   color: @glance_accent;
 }
 
+/* One clear focus ring for every button reached with the keyboard; the start and dismiss buttons set their own. */
+window.glance button:focus-visible {
+  outline: 2px solid alpha(@glance_accent, 0.85);
+  outline-offset: 1px;
+}
+
 /* Duration | Until */
 window.glance .mode-switch {
   background-color: @glance_surface;
@@ -62,7 +70,7 @@ window.glance .mode-switch button {
   background: none;
   box-shadow: none;
   border: none;
-  font-size: 11px;
+  font-size: 8.25pt;
   font-weight: 600;
   color: @glance_dim;
 }
@@ -77,13 +85,13 @@ window.glance .mode-switch button:checked {
 }
 
 window.glance .duration-picker .separator {
-  font-size: 30px;
+  font-size: 22.5pt;
   font-weight: 300;
   color: @glance_dim;
 }
 
 window.glance wheel {
-  font-size: 32px;
+  font-size: 24pt;
   font-weight: 500;
   font-feature-settings: "tnum";
   border-radius: 10px;
@@ -100,13 +108,16 @@ window.glance wheel:focus-visible {
 }
 
 window.glance .message {
-  font-size: 11px;
+  font-size: 8.25pt;
   color: @glance_dim;
 }
 
 window.glance .message.error {
   color: @glance_error;
 }
+
+/* GTK's fallback theme (no settings portal, or high contrast) paints button gradients as
+   background-image, which hides a background-color; every styled button clears it. */
 
 /* Primary action: a solid accent disc. */
 window.glance button.start {
@@ -117,6 +128,7 @@ window.glance button.start {
   border: none;
   box-shadow: none;
   background-color: @glance_accent;
+  background-image: none;
   color: @glance_on_accent;
   transition: background-color 120ms ease-out, transform 80ms ease-out;
 }
@@ -143,12 +155,17 @@ window.glance .footer dropdown > button {
   border-radius: 8px;
   font-weight: normal;
   background-color: @glance_surface;
+  background-image: none;
   box-shadow: none;
   border: none;
-  font-size: 12px;
+  font-size: 9pt;
 }
 
 window.glance .footer dropdown image {
+  color: @glance_dim;
+}
+
+window.glance .footer entry > text > placeholder {
   color: @glance_dim;
 }
 
@@ -159,13 +176,13 @@ window.glance .footer entry:focus-within {
 
 /* Running: the remaining time fills the window. */
 window.glance .countdown {
-  font-size: 96px;
+  font-size: 72pt;
   font-weight: 300;
   font-feature-settings: "tnum";
 }
 
 window.glance .countdown.hours {
-  font-size: 72px;
+  font-size: 54pt;
 }
 
 window.glance .running,
@@ -174,14 +191,15 @@ window.glance .finished {
 }
 
 window.glance .running-label {
-  font-size: 15px;
+  font-size: 11.25pt;
   color: @glance_dim;
 }
 
 window.glance .status {
-  font-size: 11px;
+  font-size: 8.25pt;
   font-weight: 700;
   letter-spacing: 2px;
+  text-transform: uppercase;
   color: @glance_accent;
 }
 
@@ -220,13 +238,19 @@ window.glance.finished {
   animation: glance-finished 1.4s ease-in-out infinite alternate;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  window.glance.finished {
+    animation: none;
+  }
+}
+
 window.glance .finished-title {
-  font-size: 40px;
+  font-size: 30pt;
   font-weight: 700;
 }
 
 window.glance .finished-label {
-  font-size: 15px;
+  font-size: 11.25pt;
   font-weight: 500;
   color: alpha(@glance_on_accent, 0.75);
 }
@@ -240,6 +264,7 @@ window.glance button.dismiss {
   font-weight: 600;
   color: @glance_on_accent;
   background-color: alpha(@glance_on_accent, 0.12);
+  background-image: none;
 }
 
 window.glance button.dismiss:hover {
@@ -257,17 +282,17 @@ window.glance.peek .peek-body {
 }
 
 window.glance.peek .peek-countdown {
-  font-size: 40px;
+  font-size: 30pt;
   font-weight: 300;
   font-feature-settings: "tnum";
 }
 
 window.glance.peek .peek-countdown.hours {
-  font-size: 32px;
+  font-size: 24pt;
 }
 
 window.glance.peek .peek-caption {
-  font-size: 12px;
+  font-size: 9pt;
   color: @glance_dim;
 }
 
@@ -280,7 +305,7 @@ window.glance.peek.paused progressbar.remaining progress {
 }
 
 window.glance.peek.finished .peek-countdown {
-  font-size: 24px;
+  font-size: 18pt;
   font-weight: 700;
   padding: 8px 4px;
 }
