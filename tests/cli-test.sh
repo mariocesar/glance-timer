@@ -1,7 +1,7 @@
 #!/bin/sh
 # End-to-end CLI test: a real primary instance and forwarded commands, on a private D-Bus session
 # and GTK's headless Broadway display so nothing reaches the user's desktop or running Glance.
-# Usage: sh cli-test.sh path/to/glance
+# Usage: sh cli-test.sh path/to/glance-timer
 GLANCE=$1
 command -v gtk4-broadwayd >/dev/null || { echo "gtk4-broadwayd not found"; exit 77; }
 command -v dbus-run-session >/dev/null || { echo "dbus-run-session not found"; exit 77; }

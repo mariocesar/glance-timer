@@ -18,4 +18,4 @@ app_deps = core_deps + [dependency('gstreamer-1.0'),
   dependency('gtk4', version: '>= 4.20'),
 ]
 
-glance = executable('glance', 'main.vala', app_sources, dependencies: app_deps, install: true)
+glance = executable('glance-timer', 'main.vala', app_sources, dependencies: app_deps, install: true)

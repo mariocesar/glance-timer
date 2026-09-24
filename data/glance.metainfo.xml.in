@@ -21,7 +21,7 @@
   <url type="vcs-browser">@HOMEPAGE@</url>
   <launchable type="desktop-id">@APP_ID@.desktop</launchable>
   <provides>
-    <binary>glance</binary>
+    <binary>glance-timer</binary>
   </provides>
   <categories>
     <category>Utility</category>

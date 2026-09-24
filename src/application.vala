@@ -37,10 +37,10 @@ namespace Glance {
             add_main_option (OPTION_REMAINING, 0, 0, OptionArg.STRING_ARRAY, "", "[DURATION]");
             set_option_context_summary ("""Start a timer, or control the one already running.
 
-  glance 25m                          start a 25 minute timer
-  glance 1h 30m --label "Deep work"   durations use h, m and s
-  glance --until 14:30                count down to 14:30
-  glance --add 5m                     add five minutes""");
+  glance-timer 25m                          start a 25 minute timer
+  glance-timer 1h 30m --label "Deep work"   durations use h, m and s
+  glance-timer --until 14:30                count down to 14:30
+  glance-timer --add 5m                     add five minutes""");
         }
 
         // Rejects malformed commands in the calling process, before anything reaches the running instance.
@@ -73,7 +73,7 @@ namespace Glance {
                 }
             }
             if (error == null) return -1;
-            printerr ("glance: %s\n", error);
+            printerr ("glance-timer: %s\n", error);
             return 1;
         }
 
@@ -258,7 +258,7 @@ namespace Glance {
             }
 
             if (error == null) return 0;
-            command_line.printerr ("glance: %s\n", error);
+            command_line.printerr ("glance-timer: %s\n", error);
             return 1;
         }
     }

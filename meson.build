@@ -19,7 +19,7 @@ add_project_arguments('-w', language: 'c')
 conf = configuration_data()
 conf.set('APP_ID', app_id)
 conf.set('VERSION', meson.project_version())
-conf.set('HOMEPAGE', 'https://github.com/mariocesar/glance')
+conf.set('HOMEPAGE', 'https://github.com/mariocesar/glance-timer')
 conf.set('RESOURCE_PATH', '/' + app_id.replace('.', '/'))
 
 subdir('data')

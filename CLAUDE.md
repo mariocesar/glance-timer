@@ -7,7 +7,7 @@ Compact keyboard-first desktop timer for Linux/Wayland (niri primary). Vala + GT
     meson setup build
     meson compile -C build
     meson test -C build
-    meson devenv -C build glance   # uninstalled run with schema from the build dir
+    meson devenv -C build glance-timer   # uninstalled run with schema from the build dir
 
 ## Rules
 

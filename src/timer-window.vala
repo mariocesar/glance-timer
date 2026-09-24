@@ -300,7 +300,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
             program_name = "Glance",
             version = Config.VERSION,
             comments = "A timer that stays visible without getting in your way.",
-            website = "https://github.com/mariocesar/glance",
+            website = "https://github.com/mariocesar/glance-timer",
             license_type = Gtk.License.MIT_X11,
             logo_icon_name = Config.APP_ID,
         }.present ();
