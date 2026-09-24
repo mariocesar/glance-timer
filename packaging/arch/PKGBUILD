@@ -1,0 +1,31 @@
+# Maintainer: Mario-César <hello@humanzilla.com>
+pkgname=glance-timer
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Compact keyboard-first desktop timer for Wayland'
+arch=('x86_64')
+url='https://github.com/mariocesar/glance'
+license=('MIT')
+depends=('glib2' 'gtk4' 'gtk4-layer-shell' 'pango' 'gstreamer' 'gst-plugins-base' 'gst-plugins-base-libs')
+makedepends=('git' 'meson' 'vala')
+checkdepends=('appstream' 'desktop-file-utils' 'dbus')
+optdepends=('gst-plugin-pipewire: play alarms through PipeWire instead of ALSA'
+            'gst-plugins-good: play alarms through PulseAudio instead of ALSA')
+# The glanceapp dashboard also installs /usr/bin/glance.
+conflicts=('glance' 'glance-bin' 'glance-git')
+source=("glance::git+https://github.com/mariocesar/glance.git#tag=v$pkgver")
+sha256sums=('SKIP')
+
+build() {
+  arch-meson glance build -D werror=false
+  meson compile -C build
+}
+
+check() {
+  meson test -C build --print-errorlogs
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+  install -Dm644 glance/LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"
+}
