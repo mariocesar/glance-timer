@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Needs GTK 4.20 and gtk4-layer-shell, newer than Ubuntu has.
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm --needed gcc git pkgconf meson vala gtk4 gtk4-layer-shell gstreamer gst-plugins-base gst-plugins-base-libs desktop-file-utils appstream dbus
+      - uses: actions/checkout@v5
+      - run: meson setup build
+      - run: meson compile -C build
+      - run: meson test -C build --print-errorlogs
