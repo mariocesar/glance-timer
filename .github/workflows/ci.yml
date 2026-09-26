@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: pacman -Syu --noconfirm --needed gcc git pkgconf meson vala gtk4 gtk4-layer-shell gstreamer gst-plugins-base gst-plugins-base-libs desktop-file-utils appstream dbus
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - run: meson setup build
       - run: meson compile -C build
       - run: meson test -C build --print-errorlogs
