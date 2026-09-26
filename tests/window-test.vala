@@ -300,6 +300,7 @@ void add_window_tests () {
             if (child is Gtk.Label) labels += (Gtk.Label) child;
         }
         assert_true (labels[0].label == "01:30" && labels[1].label == "Tea");
+        assert_true (peek.hide_on_close);
         fake_now += 30 * Duration.SECOND;
         app.timer.pause ();
         assert_true (labels[0].label == "01:00" && labels[1].label == "Paused · Tea");
@@ -308,6 +309,8 @@ void add_window_tests () {
         fake_now += 60 * Duration.SECOND;
         app.timer.check ();
         assert_true (labels[0].label == "Time's up" && peek.has_css_class ("finished"));
+        // Closing a finished Peek quits instead of hiding it.
+        assert_false (peek.hide_on_close);
         app.timer.stop ();
         app.label = "";
         app.timer.now = boottime;

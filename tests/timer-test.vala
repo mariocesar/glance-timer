@@ -165,6 +165,11 @@ void add_timer_tests () {
         assert_true (t.add (Duration.HOUR));
         assert_true (t.remaining == Duration.MAX);
         assert_true (t.progress >= 0.0 && t.progress <= 1.0);
+        // Adding after time has passed keeps total within the cap, so a restart still works.
+        c.mono += 60 * S;
+        assert_true (t.add (Duration.HOUR));
+        assert_true (t.total == Duration.MAX);
+        assert_true (t.start (t.total));
     });
 
     Test.add_func ("/timer/duration-ignores-wall-clock", () => {
@@ -190,6 +195,11 @@ void add_timer_tests () {
         assert_false (t.pause ());
         assert_true (t.add (60 * S));
         assert_true (t.remaining == 560 * S);
+        // A backward clock jump adds time but never makes progress negative.
+        c.wall -= 1000 * S;
+        assert_true (t.remaining == 1560 * S);
+        assert_true (t.progress == 0.0);
+        c.wall += 1000 * S;
         // A forward clock jump past the target finishes it.
         c.wall += 3600 * S;
         t.check ();

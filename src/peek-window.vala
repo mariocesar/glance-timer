@@ -56,6 +56,8 @@ public class Glance.PeekWindow : Gtk.ApplicationWindow {
         if (state == TimerState.IDLE) return;
         var finished = state == TimerState.FINISHED;
         var paused = state == TimerState.PAUSED;
+        // Like the full window: closing hides a counting timer, but closing a finished one quits.
+        hide_on_close = !finished;
         if (finished) add_css_class ("finished");
         else remove_css_class ("finished");
         if (paused) add_css_class ("paused");

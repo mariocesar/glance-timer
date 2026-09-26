@@ -10,10 +10,8 @@ app_id = 'io.github.mariocesar.Glance'
 
 gnome = import('gnome')
 
-# valac warnings are the quality gate (distro builds pass -Dwerror=false); warnings in generated C are not actionable.
-if get_option('werror')
-  add_project_arguments('--fatal-warnings', language: 'vala')
-endif
+# werror (on by default) makes valac warnings fatal; distro builds pass -Dwerror=false.
+# Warnings in valac-generated C are not actionable.
 add_project_arguments('-w', language: 'c')
 
 conf = configuration_data()

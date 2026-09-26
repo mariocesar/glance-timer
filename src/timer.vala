@@ -47,7 +47,8 @@ namespace Glance {
             get {
                 if (state == TimerState.FINISHED) return 1.0;
                 if (total <= 0) return 0.0;
-                return 1.0 - (double) remaining / total;
+                // An Until timer's remaining time grows past total when the wall clock moves back.
+                return double.max (1.0 - (double) remaining / total, 0.0);
             }
         }
 
@@ -100,7 +101,8 @@ namespace Glance {
             if (amount <= 0 || (state != TimerState.RUNNING && state != TimerState.PAUSED)) return false;
             var before = remaining;
             var after = int64.min (before + amount, Duration.MAX);
-            total += after - before;
+            // Capped too, so restarting from total (--reset) stays a valid duration.
+            total = int64.min (total + after - before, Duration.MAX);
             if (state == TimerState.PAUSED) {
                 paused_remaining = after;
             } else {
