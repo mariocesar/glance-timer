@@ -38,3 +38,8 @@ screenshots:
     magick "$screen" -crop "$box" +repage screenshots/peek.png
     pkill -x glance-timer || true
     oxipng -o 4 --strip safe screenshots/*.png
+
+# Install into ~/.local: glance-timer on the PATH, desktop entry, icon, metadata and settings schema.
+install:
+    test -d build-local || meson setup build-local --prefix=$HOME/.local -Dbuildtype=release
+    meson install -C build-local

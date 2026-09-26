@@ -133,6 +133,7 @@ Works offline. No network, analytics, telemetry or accounts. It only stores the 
     just run           # build and run from the build dir
     just test
     just screenshots   # retake the screenshots above, on niri
+    just install       # install into ~/.local
 
 The alarm sounds are original, made by `data/sounds/generate.py`.
 
