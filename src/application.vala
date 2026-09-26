@@ -244,9 +244,9 @@ namespace Glance {
                 if (!timer.add (Duration.parse (add))) error = not_running;
             } else if (options.contains ("pin")) {
                 if (can_pin) present_mode ("pinned");
-                else error = "this desktop can't keep windows above others (no layer-shell support); Glance stays a normal window";
+                else error = "this desktop has no layer shell, so Glance can't pin itself; use the window's Always on Top instead (on GNOME: Alt+Space)";
             } else if (options.contains ("peek")) {
-                if (!can_pin) error = "this desktop can't show Peek (no layer-shell support); Glance stays a normal window";
+                if (!can_pin) error = "this desktop has no layer shell, so Peek isn't available; use the window's Always on Top to keep Glance in view (on GNOME: Alt+Space)";
                 else if (state == TimerState.IDLE) error = "no timer is running; Peek shows a running timer";
                 else present_mode ("peek");
             } else if (options.contains ("window")) {

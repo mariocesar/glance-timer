@@ -87,6 +87,8 @@ Durations need a unit, so `glance-timer 25` is an error. Errors exit 1, success 
 
 Both need layer shell: niri, Sway, Hyprland, KDE Plasma, COSMIC and most wlroots compositors. The mode is remembered.
 
+GNOME and X11 have no layer shell, so there Glance stays a normal window. Use the window's own Always on Top instead (Alt+Space on GNOME).
+
 ### Settings
 
 There is no preferences screen. Pick the alarm in the window; the rest is `gsettings`:

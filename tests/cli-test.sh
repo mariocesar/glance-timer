@@ -79,8 +79,8 @@ expect 1 "can't be restarted" --reset
 expect 0 "" --hide
 kill -0 $primary 2>/dev/null || { echo "FAIL: hiding a running timer quit the app"; failed=1; }
 expect 0 "" --show
-expect 1 "layer-shell" --pin
-expect 1 "layer-shell" --peek
+expect 1 "Always on Top" --pin
+expect 1 "Always on Top" --peek
 expect 0 "" --window
 [ "$(gsettings get io.github.mariocesar.Glance presentation-mode)" = "'window'" ] || { echo "FAIL: --window was not stored"; failed=1; }
 [ "$(gsettings get io.github.mariocesar.Glance alarm)" = "'soft-chime'" ] || { echo "FAIL: an invalid stored alarm was not replaced by the default"; failed=1; }
