@@ -5,7 +5,7 @@ namespace Glance {
 
     public class Application : Gtk.Application {
         // Options that each ask for one thing; a positional duration counts as one more.
-        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide", "pin", "peek", "window" };
+        const string[] ACTIONS = { "until", "pause", "resume", "stop", "reset", "add", "show", "hide", "peek", "window" };
 
         // The one timer; windows only display it.
         public Timer timer { get; default = new Timer (); }
@@ -15,9 +15,9 @@ namespace Glance {
         // Id of the sound playing now, null when silent.
         public string? playing_alarm { get; private set; }
         Gst.Element? player;
-        // Whether the compositor offers layer shell, which Pinned needs.
-        public bool can_pin { get; private set; }
-        // Presentation: "window", "pinned" or "peek". Peek applies only while a timer is active.
+        // Whether the compositor offers layer shell, which Peek needs.
+        public bool can_peek { get; private set; }
+        // Presentation: "window" or "peek". Peek applies only while a timer is active.
         string mode = "window";
 
         public Application () {
@@ -31,7 +31,6 @@ namespace Glance {
             add_main_option ("add", 'a', 0, OptionArg.STRING, "Add time to the timer", "DURATION");
             add_main_option ("show", 0, 0, OptionArg.NONE, "Show the window", null);
             add_main_option ("hide", 0, 0, OptionArg.NONE, "Hide the window, like closing it", null);
-            add_main_option ("pin", 0, 0, OptionArg.NONE, "Keep Glance above other windows", null);
             add_main_option ("peek", 0, 0, OptionArg.NONE, "Show the running timer small, in a corner", null);
             add_main_option ("window", 0, 0, OptionArg.NONE, "Show Glance as a normal window", null);
             add_main_option (OPTION_REMAINING, 0, 0, OptionArg.STRING_ARRAY, "", "[DURATION]");
@@ -91,8 +90,8 @@ namespace Glance {
             settings = new GLib.Settings (Config.APP_ID);
             // is_supported () logs a critical on non-Wayland displays, so check the backend first.
             var wayland = Type.from_name ("GdkWaylandDisplay");
-            can_pin = wayland != 0 && Gdk.Display.get_default ().get_type ().is_a (wayland) && GtkLayerShell.is_supported ();
-            if (can_pin) mode = settings.get_string ("presentation-mode");
+            can_peek = wayland != 0 && Gdk.Display.get_default ().get_type ().is_a (wayland) && GtkLayerShell.is_supported ();
+            if (can_peek) mode = settings.get_string ("presentation-mode");
             timer.finished.connect (() => play_alarm (settings.get_string ("alarm")));
             timer.notify["state"].connect (() => {
                 // Dismissing, stopping or starting silences the alarm or a preview.
@@ -162,7 +161,7 @@ namespace Glance {
 
         Gtk.Window build_window () {
             if (mode == "peek" && timer.state != TimerState.IDLE) return new PeekWindow (this, settings.get_string ("peek-corner"));
-            return new TimerWindow (this, mode == "pinned");
+            return new TimerWindow (this);
         }
 
         // Shows Glance in the given mode and remembers it.
@@ -242,11 +241,8 @@ namespace Glance {
                 }
             } else if (add != null) {
                 if (!timer.add (Duration.parse (add))) error = not_running;
-            } else if (options.contains ("pin")) {
-                if (can_pin) present_mode ("pinned");
-                else error = "this desktop has no layer shell, so Glance can't pin itself; use the window's Always on Top instead (on GNOME: Alt+Space)";
             } else if (options.contains ("peek")) {
-                if (!can_pin) error = "this desktop has no layer shell, so Peek isn't available; use the window's Always on Top to keep Glance in view (on GNOME: Alt+Space)";
+                if (!can_peek) error = "this desktop has no layer shell, so Peek isn't available; use the window's Always on Top to keep Glance in view (on GNOME: Alt+Space)";
                 else if (state == TimerState.IDLE) error = "no timer is running; Peek shows a running timer";
                 else present_mode ("peek");
             } else if (options.contains ("window")) {

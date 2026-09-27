@@ -1,6 +1,6 @@
 # Glance
 
-A small, keyboard-first countdown timer for Linux on Wayland. Type a duration, press Enter, and the time left stays big and readable. Pin it above your windows or shrink it into a corner while you work. GTK 4 and Vala, made first for [niri](https://github.com/YaLTeR/niri).
+A small, keyboard-first countdown timer for Linux on Wayland. Type a duration, press Enter, and the time left stays big and readable. Shrink it into a corner while you work. GTK 4 and Vala, made first for [niri](https://github.com/YaLTeR/niri).
 
 <p align="center">
   <img src="screenshots/setup.png" width="420" alt="Setup: hour, minute and second wheels set to 00:25:00, a round amber start button, a label field and the alarm choice">
@@ -15,7 +15,7 @@ A small, keyboard-first countdown timer for Linux on Wayland. Type a duration, p
 - Type `25.` for 25 minutes, or roll the wheels with a mouse, touchpad or arrow keys.
 - Count down a duration, or count down to a time of day.
 - When time is up the whole window turns amber and plays a short alarm.
-- **Pinned** keeps Glance above every window; **Peek** shrinks a running timer into a corner.
+- **Peek** shrinks a running timer into a corner, above every window.
 - `glance-timer 25m`, `--pause` and `--add 5m` drive the running timer from scripts and key bindings.
 - One timer, offline, no accounts, no tracking.
 
@@ -75,17 +75,15 @@ Every call talks to the one running Glance; the first call starts it.
     glance-timer --reset                      restart from the full duration
     glance-timer --add 5m
     glance-timer --show | --hide
-    glance-timer --pin | --peek | --window
+    glance-timer --peek | --window
 
 Durations need a unit, so `glance-timer 25` is an error. Errors exit 1, success prints nothing.
 
-### Pinned and Peek
+### Peek
 
-**Pinned** keeps the full window above everything in the top-right corner. It only takes keyboard focus when you click it.
+**Peek** shrinks a running timer into a small corner display that stays above every window and never takes keyboard focus. Use the Peek button while a timer runs, or `glance-timer --peek`. Click it, or run `glance-timer --window`, to get the window back.
 
-**Peek** shrinks a running timer into a small corner display. Click it, or run `glance-timer --window`, to get the window back.
-
-Both need layer shell: niri, Sway, Hyprland, KDE Plasma, COSMIC and most wlroots compositors. The mode is remembered.
+Peek needs layer shell: niri, Sway, Hyprland, KDE Plasma, COSMIC and most wlroots compositors. The mode is remembered.
 
 GNOME and X11 have no layer shell, so there Glance stays a normal window. Use the window's own Always on Top instead (Alt+Space on GNOME).
 
@@ -96,7 +94,7 @@ There is no preferences screen. Pick the alarm in the window; the rest is `gsett
     gsettings set io.github.mariocesar.Glance alarm-volume 0.5          # 0 to 1, default 0.8
     gsettings set io.github.mariocesar.Glance peek-corner bottom-left   # top-left, top-right, bottom-left, bottom-right
     gsettings set io.github.mariocesar.Glance alarm bell                # soft-chime, bell, digital, pulse, classic, none
-    gsettings set io.github.mariocesar.Glance presentation-mode window  # window, pinned, peek
+    gsettings set io.github.mariocesar.Glance presentation-mode window  # window, peek
 
 ## niri
 

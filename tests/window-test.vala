@@ -285,7 +285,7 @@ void add_window_tests () {
     });
 
     Test.add_func ("/peek/states", () => {
-        if (!app.can_pin) {
+        if (!app.can_peek) {
             Test.skip ("no layer shell");
             return;
         }

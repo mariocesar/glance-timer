@@ -24,7 +24,7 @@ broadway=$!
 trap 'kill $primary $broadway 2>/dev/null' EXIT
 # GTK_A11Y=none: on Broadway GTK picks its test accessibility backend, which crashes in announce ().
 export GDK_BACKEND=broadway BROADWAY_DISPLAY=$display GTK_A11Y=none
-# Settings from an older build: removed keys, an invalid alarm, and Pinned stored on a desktop without layer shell.
+# Settings from an older build: removed keys, an invalid alarm, and the removed Pinned mode.
 export GSETTINGS_BACKEND=keyfile XDG_CONFIG_HOME=$XDG_RUNTIME_DIR/config
 mkdir -p "$XDG_CONFIG_HOME/glib-2.0/settings"
 cat > "$XDG_CONFIG_HOME/glib-2.0/settings/keyfile" <<EOF
@@ -79,7 +79,6 @@ expect 1 "can't be restarted" --reset
 expect 0 "" --hide
 kill -0 $primary 2>/dev/null || { echo "FAIL: hiding a running timer quit the app"; failed=1; }
 expect 0 "" --show
-expect 1 "Always on Top" --pin
 expect 1 "Always on Top" --peek
 expect 0 "" --window
 [ "$(gsettings get io.github.mariocesar.Glance presentation-mode)" = "'window'" ] || { echo "FAIL: --window was not stored"; failed=1; }

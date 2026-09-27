@@ -28,44 +28,14 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
     // Page that last received keyboard focus.
     string focused_page = "";
 
-    // A pinned window is a layer-shell overlay above other windows; the caller checks support.
-    public TimerWindow (Application app, bool pinned = false) {
+    public TimerWindow (Application app) {
         Object (application: app, title: "Glance", resizable: false);
         this.app = app;
+        // Hidden titlebar: no stock header bar, the whole surface drags the window.
+        child = new Gtk.WindowHandle () { child = pages };
 
-        if (pinned) {
-            GtkLayerShell.init_for_window (this);
-            GtkLayerShell.set_namespace (this, "glance");
-            GtkLayerShell.set_layer (this, GtkLayerShell.Layer.OVERLAY);
-            GtkLayerShell.set_anchor (this, GtkLayerShell.Edge.TOP, true);
-            GtkLayerShell.set_anchor (this, GtkLayerShell.Edge.RIGHT, true);
-            GtkLayerShell.set_margin (this, GtkLayerShell.Edge.TOP, 16);
-            GtkLayerShell.set_margin (this, GtkLayerShell.Edge.RIGHT, 16);
-            GtkLayerShell.set_exclusive_zone (this, 0);
-            // niri focuses an on-demand overlay as soon as it appears, so start without keyboard and
-            // accept focus (on click) only while the pointer is over Glance or Glance already has it.
-            GtkLayerShell.set_keyboard_mode (this, GtkLayerShell.KeyboardMode.NONE);
-            var pointer = new Gtk.EventControllerMotion ();
-            pointer.enter.connect (() => GtkLayerShell.set_keyboard_mode (this, GtkLayerShell.KeyboardMode.ON_DEMAND));
-            pointer.leave.connect (() => {
-                if (!is_active) GtkLayerShell.set_keyboard_mode (this, GtkLayerShell.KeyboardMode.NONE);
-            });
-            var focus = new Gtk.EventControllerFocus ();
-            focus.leave.connect (() => {
-                if (!pointer.contains_pointer) GtkLayerShell.set_keyboard_mode (this, GtkLayerShell.KeyboardMode.NONE);
-            });
-            ((Gtk.Widget) this).add_controller (pointer);
-            ((Gtk.Widget) this).add_controller (focus);
-            add_css_class ("pinned");
-            // Layer surfaces cannot be moved, so no drag handle.
-            child = pages;
-        } else {
-            // Hidden titlebar: no stock header bar, the whole surface drags the window.
-            child = new Gtk.WindowHandle () { child = pages };
-        }
-
-        pages.add_named (build_setup (pinned), "setup");
-        pages.add_named (build_running (pinned), "running");
+        pages.add_named (build_setup (), "setup");
+        pages.add_named (build_running (), "running");
         pages.add_named (build_finished (), "finished");
         // Method handlers are dropped automatically when the window is disposed.
         app.timer.notify["state"].connect (sync_page);
@@ -109,22 +79,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         if (!get_visible ()) present ();
     }
 
-    // Pin or unpin, in the window's header. Hidden where layer shell is unavailable.
-    Gtk.Button build_pin_button (bool pinned) {
-        var button = new Gtk.Button () {
-            css_classes = { "icon" },
-            valign = Gtk.Align.CENTER,
-            tooltip_text = pinned ? "Unpin" : "Keep above other windows",
-            visible = app.can_pin,
-            child = new Gtk.Image.from_icon_name ("glance-pin-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
-        };
-        if (pinned) button.add_css_class ("active");
-        button.update_property (Gtk.AccessibleProperty.LABEL, pinned ? "Unpin window" : "Pin above other windows", -1);
-        button.clicked.connect (() => app.present_mode (pinned ? "window" : "pinned"));
-        return button;
-    }
-
-    Gtk.Widget build_setup (bool pinned) {
+    Gtk.Widget build_setup () {
         var duration_toggle = new Gtk.ToggleButton.with_label ("Duration") { active = true };
         until_toggle = new Gtk.ToggleButton.with_label ("Until") { group = duration_toggle };
         until_toggle.toggled.connect (on_mode_toggled);
@@ -144,7 +99,6 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         var header = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 12);
         header.append (modes);
         header.append (message);
-        header.append (build_pin_button (pinned));
         header.append (about);
 
         picker = new DurationPicker ();
@@ -242,7 +196,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         return grid;
     }
 
-    Gtk.Widget build_running (bool pinned) {
+    Gtk.Widget build_running () {
         // PAUSED indicator on the left, pause and stop on the right.
         status = new Gtk.Label ("Paused") { css_classes = { "status" } };
         pause_icon = new Gtk.Image.from_icon_name ("glance-pause-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION };
@@ -261,7 +215,18 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
         var controls = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 4);
         controls.append (pause_button);
         controls.append (stop_button);
-        controls.append (build_pin_button (pinned));
+        // Peek needs a running timer, so it only lives on this page.
+        var peek_button = new Gtk.Button () {
+            css_classes = { "icon" },
+            valign = Gtk.Align.CENTER,
+            tooltip_text = "Shrink into a corner",
+            visible = app.can_peek,
+            focus_on_click = false,
+            child = new Gtk.Image.from_icon_name ("glance-peek-symbolic") { accessible_role = Gtk.AccessibleRole.PRESENTATION },
+        };
+        peek_button.update_property (Gtk.AccessibleProperty.LABEL, "Peek in a corner", -1);
+        peek_button.clicked.connect (() => app.present_mode ("peek"));
+        controls.append (peek_button);
         var header = new Gtk.CenterBox () { start_widget = status, end_widget = controls };
 
         countdown = new Gtk.Label ("") { css_classes = { "countdown" }, accessible_role = Gtk.AccessibleRole.TIMER };
@@ -314,7 +279,7 @@ public class Glance.TimerWindow : Gtk.ApplicationWindow {
                 app.timer.stop ();
                 return true;
             case Gdk.Key.space:
-                // A focused button takes Space (Pin, reached with Tab), but Space never stops or dismisses.
+                // A focused button takes Space (Peek, reached with Tab), but Space never stops or dismisses.
                 var focus = get_focus ();
                 if (focus is Gtk.Button && focus != stop_button && app.timer.state != TimerState.FINISHED) return false;
                 toggle_pause ();

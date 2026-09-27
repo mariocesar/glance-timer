@@ -21,7 +21,6 @@
     <key name="presentation-mode" type="s">
       <choices>
         <choice value="window"/>
-        <choice value="pinned"/>
         <choice value="peek"/>
       </choices>
       <default>'window'</default>
